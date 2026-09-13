@@ -7,7 +7,7 @@
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
 - Product implementation: not started; P00-P02 establish documentation/contracts/architecture and P03 establishes only the typed repository scaffold and quality gates
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`; P04 is the current checkpoint.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`.
 
 ## Established invariants
 
