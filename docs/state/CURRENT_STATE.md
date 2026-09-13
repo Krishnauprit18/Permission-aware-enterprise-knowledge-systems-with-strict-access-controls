@@ -3,11 +3,11 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P07`
+- Current phase: `P08`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, and P07 provides canonical PostgreSQL metadata persistence; ingestion, retrieval, indexing, reranking, and generation remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, and P08 provides deterministic synthetic demo/evaluation fixtures plus validation; ingestion, retrieval, indexing, reranking, and generation remain unimplemented.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`.
 
 ## Established invariants
 
@@ -95,6 +95,16 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - P07 evidence: full `make verify-release` passed; focused PostgreSQL migration/repository tests passed 5 tests against the running private platform database; migration apply and repeat-idempotency checks passed; backend domain coverage is 97.98% and frontend configured coverage is 98.87%.
 - P07 implementation checkpoint: `801a788` (`feat(P07): implement canonical persistence`) is pushed to `origin/master`; this state checkpoint records the final implementation hash.
 
+## P08 synthetic dataset baseline
+
+- `data/synthetic/` contains the versioned `northstar-enterprise-demo-eval` corpus: 15 source items, 4 accounts across 2 tenants, 6 synthetic principals, six source types, OpenFGA-shaped ACL mappings, and 60 golden retrieval/refusal cases.
+- Deliberate evidence covers stale and superseded versions, current authoritative and customer-safe corroboration, informal conflict, Legal-only content, deletion, hourly updates, indirect prompt injection, and a separate Harbor Labs cross-tenant decoy.
+- `knowledge_system.dataset.validator` validates deterministic IDs, source hashes and paths, tenant/ACL/lifecycle/lineage consistency, authority/freshness profiles, required labels/types, and secret-like or email-shaped content. It does not generate or store model answers.
+- `make dataset-validate` is a fast deterministic fixture check and is part of `make verify`. `make seed-demo` validates the fixtures only; ingestion and database loading remain future work.
+- P08 evidence: `make verify` and `make verify-release` passed. The default aggregate integration runs continue to skip five PostgreSQL tests when the local database is not exposed; this is an existing environment condition and not a P08 fixture failure.
+- P08 implementation checkpoint: `3a1b01f` (`feat(P08): add synthetic enterprise dataset`) is pushed to `origin/master`.
+- P08 state checkpoint is anchored to implementation commit `3a1b01f`; the follow-up documentation commit contains the completed plan, prompt archive, and final ledgers.
+
 ## Next authorized work
 
-No future phase is authorized by this record. Await an explicit P08 prompt.
+Next authorized phase: P09, only after an explicit P09 prompt.

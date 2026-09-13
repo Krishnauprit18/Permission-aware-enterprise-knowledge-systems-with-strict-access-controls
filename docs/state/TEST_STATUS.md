@@ -94,3 +94,12 @@
 - Migration evidence: `make db-migrate` applied `0001_initial` and a repeat invocation reported `Already applied: 0001_initial`; `make db-schema-doc` generated `docs/generated/db-schema.md` from the live database.
 - Fast/release evidence: final `make verify-release` passed with Ruff, Prettier, ESLint, Markdown lint (`markdownlint-cli2 v0.18.1`, 67 files, 0 errors), strict mypy/TypeScript, unit/integration/security tests, Bandit, Semgrep, dependency audit, npm audit, detect-secrets, CycloneDX SBOM, ShellCheck fallback, Docker BuildKit checks, and Trivy configuration checks.
 - Non-failing warnings: Starlette TestClient and AnyIO emitted existing upstream deprecation warnings. Default aggregate integration runs skip the P07 PostgreSQL tests when the private Docker context is not exposed to localhost; the focused host-addressed run above is the authoritative P07 database evidence.
+
+## P08
+
+- Scope: deterministic synthetic enterprise demo/evaluation corpus, ACL fixtures, golden cases, content validator, and documentation. No runtime ingestion, retrieval, indexing, model, or answer-generation workflow was implemented.
+- Dataset evidence: 15 source items across document, support-ticket, Slack-thread, call-transcript, policy, and hourly-feed types; 4 accounts across 2 tenants; 6 synthetic users; 15 ACL resources; and 60 golden cases. Required scenario labels and evidence authority/freshness relationships validate successfully.
+- Focused evidence: `make dataset-validate` passed; `uv run --directory backend pytest -m 'unit and security' tests/unit/test_synthetic_dataset.py --no-cov` passed 3 tests; strict mypy, Ruff, and formatting checks passed for the validator/tests.
+- Fast gate: `make verify` passed. Backend unit tests passed 34 selected tests with 97.98% domain coverage; frontend tests passed 13 tests with 98.87% configured coverage; the default integration run passed 4 tests and skipped 5 PostgreSQL tests because the local database was not exposed; security tests passed 32 tests with 2 PostgreSQL skips; Bandit and Semgrep passed with 0 findings.
+- Release gate: `make verify-release` passed, including Markdown lint (`markdownlint-cli2 v0.18.1`, 69 files, 0 errors), dependency audits with no known vulnerabilities, detect-secrets, CycloneDX SBOM generation, ShellCheck fallback, Docker BuildKit checks, and Trivy configuration scans.
+- Known non-failing warnings: existing Starlette TestClient and AnyIO deprecation warnings remain. No P08-specific warning or failure was introduced.
