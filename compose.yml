@@ -1,0 +1,228 @@
+name: permission-aware-knowledge
+
+services:
+  postgres:
+    image: postgres:16.4-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?generate .env.local first}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?generate .env.local first}
+      POSTGRES_DB: ${POSTGRES_DB:?generate .env.local first}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./platform/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [platform]
+
+  opensearch:
+    image: opensearchproject/opensearch:2.17.1
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?generate .env.local first}
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    mem_limit: 2g
+    cpus: 2.0
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+      nofile:
+        soft: 65536
+        hard: 65536
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -ksf -u "admin:$${OPENSEARCH_INITIAL_ADMIN_PASSWORD}"
+          "https://localhost:9200/_cluster/health?wait_for_status=yellow" >/dev/null
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    networks: [platform]
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.6
+    restart: unless-stopped
+    command:
+      - start-dev
+      - --http-port=8080
+      - --http-management-port=9000
+      - --hostname-strict=false
+      - --health-enabled=true
+      - --metrics-enabled=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USERNAME:?generate .env.local first}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?generate .env.local first}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: ${POSTGRES_USER:?generate .env.local first}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?generate .env.local first}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8080:8080"
+      - "127.0.0.1:9100:9000"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          bash -ec 'exec 3<>/dev/tcp/127.0.0.1/9000;
+          printf "GET /health/ready HTTP/1.0\r\n\r\n" >&3;
+          IFS= read -r status <&3; [[ "$${status}" == *" 200 "* ]]'
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [platform]
+
+  openfga-migrate:
+    image: openfga/openfga:v1.8.3
+    command: migrate
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER:?generate .env.local first}:${POSTGRES_PASSWORD:?generate .env.local first}@postgres:5432/openfga?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [platform]
+
+  openfga:
+    image: openfga/openfga:v1.8.3
+    restart: unless-stopped
+    command: run
+    environment:
+      OPENFGA_DATASTORE_ENGINE: postgres
+      OPENFGA_DATASTORE_URI: postgres://${POSTGRES_USER:?generate .env.local first}:${POSTGRES_PASSWORD:?generate .env.local first}@postgres:5432/openfga?sslmode=disable
+      OPENFGA_HTTP_ADDR: 0.0.0.0:8080
+      OPENFGA_METRICS_ADDR: 0.0.0.0:2112
+      OPENFGA_PLAYGROUND_ENABLED: "false"
+      OPENFGA_AUTHN_METHOD: none
+    depends_on:
+      openfga-migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8081:8080"
+    healthcheck:
+      test: ["CMD", "/openfga", "version"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [platform]
+
+  minio:
+    image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z@sha256:34c8e2f52a5984492555427fee07254c80036bdb7079bb91679232abd7a4fa20
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?generate .env.local first}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?generate .env.local first}
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:9000/minio/health/live >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks: [platform]
+
+  minio-init:
+    image: quay.io/minio/mc:latest@sha256:eb4ea9884b77704230e2423e9004d2fa738dc272876b9cc41a297d29443b8780
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mc alias set local http://minio:9000 "$${MINIO_ROOT_USER}"
+        "$${MINIO_ROOT_PASSWORD}" &&
+        mc mb --ignore-existing local/raw &&
+        mc anonymous set none local/raw
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:?generate .env.local first}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?generate .env.local first}
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks: [platform]
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    restart: unless-stopped
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+      SPAN_STORAGE_TYPE: memory
+    ports:
+      - "127.0.0.1:16686:16686"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:16686/"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [platform]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.110.0
+    restart: unless-stopped
+    command: ["--config=/etc/otelcol-contrib/config.yaml"]
+    volumes:
+      - ./platform/otel/collector.yaml:/etc/otelcol-contrib/config.yaml:ro
+    depends_on:
+      jaeger:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:13133:13133"
+      - "127.0.0.1:9464:9464"
+    healthcheck:
+      test: ["CMD", "/otelcol-contrib", "validate", "--config=/etc/otelcol-contrib/config.yaml"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [platform]
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    restart: unless-stopped
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    volumes:
+      - ./platform/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:9090:9090"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:9090/-/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    networks: [platform]
+
+networks:
+  platform:
+    internal: true
+
+volumes:
+  postgres_data:
+  opensearch_data:
+  keycloak_data:
+  minio_data:
+  prometheus_data:

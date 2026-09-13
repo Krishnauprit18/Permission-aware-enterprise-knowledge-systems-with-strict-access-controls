@@ -1,0 +1,66 @@
+# Test Status
+
+## P00
+
+- Scope: documentation, repository policy, templates, and placeholder Make targets.
+- Implementation tests: none applicable; no product code exists.
+- Required checks run:
+  - `make verify`
+  - `make bootstrap`
+  - `make sbom`
+  - `make scan`
+  - structural and content assertions for required paths and policy phrases
+- Result: `PASS` for P00 placeholder/documentation scope.
+- Known gaps: real formatters, linters, type checker, test runners, SBOM generator, and scanners will be selected when implementation begins.
+
+## P01
+
+- Scope: product specification, journeys, invariants, trust model, threat model, standards verification matrix, ADRs, prompt archive, and state updates.
+- Implementation tests: none applicable; P01 explicitly forbids feature implementation.
+- Required checks run:
+  - `make verify bootstrap sbom scan`
+  - `npx --yes markdownlint-cli2 'AGENTS.md' 'docs/**/*.md'`
+  - structural Markdown assertions for required product terms, ten journeys, seven required invariant IDs, 21 threat IDs, and five standards references
+  - required path and content review
+  - trailing-whitespace audit
+  - prompt archive SHA-256 integrity audit
+  - product implementation file audit
+- Result: `PASS` for P01 specification-only scope.
+- Markdown lint result: `markdownlint-cli2 v0.23.2` with `markdownlint v0.41.1`, 39 authored Markdown files, 0 issues. Exact prompt archives are excluded by `.markdownlint-cli2.yaml` and remain protected by SHA-256 ledger checks.
+
+## P02
+
+- Scope: reference architecture, four mandatory pipelines, dynamic authorization, typed ports and import rules, versioning, architecture review, six technology ADRs, prompt archive, and state updates.
+- Business implementation tests: none applicable; P02 contains no product code or deployment artifacts.
+- Required checks run:
+  - `npx --yes markdownlint-cli2 'AGENTS.md' 'docs/**/*.md'`
+  - architecture assertions for the selected stack, server-generated filters, metadata-only candidates, fine checks, authorization-bearing types, and no re-embedding on relationship change
+  - required port assertions for connector, parser, chunker, embedder, search, authorization, reranker, LLM, evidence resolver, and audit sink
+  - mandatory pipeline-order and API/index/embedding/prompt/evaluation-version assertions
+  - ADR structure/status review for ADR-005 through ADR-010
+  - scope audit confirming no business implementation files
+  - P02 prompt SHA-256 and ledger integrity checks
+- Result: `PASS` for P02 architecture-only scope.
+- Markdown lint result: `markdownlint-cli2 v0.23.2` with `markdownlint v0.41.1`, 52 authored Markdown files, 0 issues on the final P02 tree.
+
+## P03
+
+- Scope: typed backend/frontend scaffold, reproducible dependencies, developer controls, local fast/release gates, boundary tests, and engineering documentation. No product features implemented.
+- Environment: uv `0.12.13` with managed CPython `3.12.14`; Node `v24.5.0`; npm `11.13.0`; Docker `29.7.2`; Semgrep locally installed; ShellCheck and Trivy unavailable on this host.
+- Required fast gate: `make verify` PASS.
+- Fast evidence: Ruff format/check, Prettier, ESLint, Markdown lint (`markdownlint-cli2 v0.18.1`, 53 files, 0 errors), strict mypy, strict TypeScript, 2 backend unit tests at 100% measured domain coverage, 2 frontend unit tests at 100% configured source coverage, 1 architecture integration test, Bandit PASS, Semgrep PASS with 0 findings, and 2 security-marked regression tests.
+- Release evidence: `make scan` PASS for shipped runtime dependencies, npm runtime dependencies, secrets, and Semgrep. `make sbom` PASS with backend/frontend CycloneDX output. `make container-lint` PASS using Docker BuildKit `build --check` for both Dockerfiles.
+- Release gate: `make verify-release` BLOCKED before completion because ShellCheck and Trivy are not installed. An attempted apt installation could not acquire the system package lock without root access. This is an explicit tooling gap, not a waived check.
+- Repository controls: `uv run --project backend pre-commit run --files ...` PASS for representative backend, frontend, documentation, manifest, and shell files. The `--all-files` form was skipped by pre-commit because this baseline repository has no tracked files yet.
+- Known advisory scope: a prior full development-graph audit reported `lxml 5.4.0` and was not promoted to shipped runtime dependencies because the SBOM tool constrains lxml below 6; runtime audit is clean. Revisit before treating the development environment as release-hardened.
+
+## P04
+
+- Scope: local Docker Compose infrastructure only. No product schemas, connectors, retrieval, models, authorization tuples, or demo data were implemented.
+- Platform: PostgreSQL, OpenSearch 2.17.1, Keycloak 26.0.6, OpenFGA 1.8.3, MinIO, OTel Collector 0.110.0, Jaeger 1.62.0, and Prometheus 2.54.1 on a private internal network with loopback-only host bindings.
+- Configuration: `make platform-config` PASS; generated `.env.local` is mode `0600`; Compose interpolation PASS; no committed secret values.
+- Startup: `make up` PASS with health-gated dependencies, successful OpenFGA migration, and successful MinIO bucket initialization.
+- Smoke: `make platform-status` PASS for PostgreSQL readiness, OpenSearch health/version, Keycloak readiness/master realm, OpenFGA health, MinIO liveness, OTel health, Jaeger UI, and Prometheus readiness. The private-network fallback was used for the active `minikube-docker` context.
+- Static/container: `make container-lint` PASS with Compose validation and Docker BuildKit checks; `make shellcheck` PASS using a pinned local fallback; `make container-scan` PASS using pinned Trivy `0.56.2` with embedded checks.
+- Full gate: `make verify`, `make scan`, `make sbom`, and `make verify-release` PASS. `make -n reset-demo` confirms destructive volume reset plus deterministic re-bootstrap; live reset was not run because it deletes named volumes and no explicit deletion approval was provided.
+- Known gap: MinIO runs as root in the pinned image configuration due entrypoint/named-volume behavior; this is documented for future hardening.
