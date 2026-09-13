@@ -3,11 +3,11 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P06`
+- Current phase: `P07`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication and P06 provides the first-class OpenFGA authorization boundary; ingestion, retrieval, indexing, reranking, generation, and product persistence remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, and P07 provides canonical PostgreSQL metadata persistence; ingestion, retrieval, indexing, reranking, and generation remain unimplemented.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`.
 
 ## Established invariants
 
@@ -86,6 +86,15 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - P06 permission matrix fixture: `docs/04-evals/permission_matrix.json`.
 - P06 evidence: `make verify`, `make verify-release`, `make shellcheck`, integrated `make up`, `make platform-status`, two idempotent `make openfga-bootstrap` runs, and live relationship probes passed. P06 implementation checkpoint `acb3083` is pushed to `origin/master`.
 
+## P07 canonical persistence baseline
+
+- PostgreSQL migration `backend/migrations/0001_initial.sql` defines tenants, principal references, accounts, source connections/items, document versions, chunk metadata, ingestion jobs/checkpoints, deletion tombstones, query trace metadata, and evaluation datasets/cases/runs. Raw content, credentials, and authorization truth remain outside these tables.
+- Domain objects are typed, UTC-aware, framework-independent, and enforce stable chunk identity, lifecycle/deletion consistency, shareability classification, lineage, retention, and non-empty identity/reference fields.
+- `PostgresUnitOfWork` owns explicit commit/rollback/close behavior. The adapter uses parameterized SQL and never creates or alters schema at runtime; tenant/source identity conflicts fail closed instead of rebinding existing rows.
+- `scripts/migrate-database.sh` applies ordered migrations with SHA-256 checksum drift detection and transactional ledger updates. `scripts/generate-db-schema-doc.sh` generated `docs/generated/db-schema.md` from the live database.
+- P07 evidence: full `make verify-release` passed; focused PostgreSQL migration/repository tests passed 5 tests against the running private platform database; migration apply and repeat-idempotency checks passed; backend domain coverage is 97.98% and frontend configured coverage is 98.87%.
+- P07 implementation checkpoint: `801a788` (`feat(P07): implement canonical persistence`) is pushed to `origin/master`; this state checkpoint records the final implementation hash.
+
 ## Next authorized work
 
-No future phase is authorized by this record. Await an explicit P07 prompt.
+No future phase is authorized by this record. Await an explicit P08 prompt.
