@@ -1,9 +1,14 @@
-"""Typed ports for future ingestion, retrieval, generation, and audit adapters."""
+"""Typed ports for future content, retrieval, generation, and audit adapters."""
 
 from collections.abc import Sequence
 from typing import Protocol
 
 from knowledge_system.application.ports.authorization import AuthorizationPort
+from knowledge_system.application.ports.content import (
+    ContentChunker,
+    ContentNormalizer,
+    ContentParser,
+)
 from knowledge_system.domain.contracts import (
     AuthorizedChunk,
     AuthorizedObjectId,
@@ -12,17 +17,11 @@ from knowledge_system.domain.contracts import (
     PrincipalContext,
 )
 
-
-class Parser(Protocol):
-    """Converts one raw record into normalized, untrusted content."""
-
-    def parse(self, raw_record: bytes) -> str: ...
-
-
-class Chunker(Protocol):
-    """Splits normalized content into bounded, metadata-associated segments."""
-
-    def chunk(self, normalized_text: str) -> Sequence[str]: ...
+# These aliases keep the original architecture vocabulary while the richer P10
+# contracts carry source locators, lineage, limits, and security metadata.
+Parser = ContentParser
+Normalizer = ContentNormalizer
+Chunker = ContentChunker
 
 
 class Embedder(Protocol):
