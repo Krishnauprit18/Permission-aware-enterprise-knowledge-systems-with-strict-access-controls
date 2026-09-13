@@ -3,11 +3,11 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P08`
+- Current phase: `P09`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, and P08 provides deterministic synthetic demo/evaluation fixtures plus validation; ingestion, retrieval, indexing, reranking, and generation remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, and P09 provides typed fixture connectors plus raw-ingestion orchestration; parsing, retrieval, indexing, reranking, and generation remain unimplemented.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`.
 
 ## Established invariants
 
@@ -100,11 +100,37 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - `data/synthetic/` contains the versioned `northstar-enterprise-demo-eval` corpus: 15 source items, 4 accounts across 2 tenants, 6 synthetic principals, six source types, OpenFGA-shaped ACL mappings, and 60 golden retrieval/refusal cases.
 - Deliberate evidence covers stale and superseded versions, current authoritative and customer-safe corroboration, informal conflict, Legal-only content, deletion, hourly updates, indirect prompt injection, and a separate Harbor Labs cross-tenant decoy.
 - `knowledge_system.dataset.validator` validates deterministic IDs, source hashes and paths, tenant/ACL/lifecycle/lineage consistency, authority/freshness profiles, required labels/types, and secret-like or email-shaped content. It does not generate or store model answers.
-- `make dataset-validate` is a fast deterministic fixture check and is part of `make verify`. `make seed-demo` validates the fixtures only; ingestion and database loading remain future work.
+- `make dataset-validate` is a fast deterministic fixture check and is part of `make verify`. `make seed-demo` validates the fixtures only; automatic platform ingestion/database loading remains future work.
 - P08 evidence: `make verify` and `make verify-release` passed. The default aggregate integration runs continue to skip five PostgreSQL tests when the local database is not exposed; this is an existing environment condition and not a P08 fixture failure.
 - P08 implementation checkpoint: `3a1b01f` (`feat(P08): add synthetic enterprise dataset`) is pushed to `origin/master`.
 - P08 state checkpoint is anchored to implementation commit `3a1b01f`; the follow-up documentation commit contains the completed plan, prompt archive, and final ledgers.
 
+## P09 connector and ingestion baseline
+
+- `knowledge_system.application.ports.ingestion` defines typed connector,
+  raw-store, relationship-intent, and ingestion-persistence ports. The
+  application layer does not import MinIO, PostgreSQL, OpenFGA, or framework
+  implementations.
+- Fixture adapters cover document, support-ticket, Slack-thread, and optional
+  call-transcript source types. They enforce root containment, type/size
+  limits, UTC metadata, duplicate identity rejection, ACL mapping, malformed
+  input isolation, and byte-to-manifest hash verification.
+- `IngestionOrchestrator` is idempotent by stable job/checkpoint/tombstone and
+  version identities. It stores active raw bytes before future parsing,
+  persists metadata/version, hands ACL intents to a dedicated sink, removes
+  deleted relationships, records tombstones, and checkpoints only afterward.
+- Raw object references are verified for content hash and size. MinIO receives
+  tenant/source/version/hash keys and allowlisted provenance metadata. No
+  connector fetches arbitrary URLs or attachment references.
+- Item failures are isolated and logged with stable IDs/reason codes only.
+  Interrupted work is replayable and a returned cursor does not cross a
+  failure gap. P09 does not parse, chunk, embed, index, retrieve, rerank, or
+  generate answers.
+- P09 evidence: `make verify`, `make verify-release`, and 14 focused ingestion
+  tests passed. Default aggregate integration continues to skip five
+  PostgreSQL tests when the private database is not exposed to localhost.
+- P09 implementation checkpoint: `7fabcf0` (`feat(P09): implement connector ingestion orchestration`) is pushed to `origin/master`.
+
 ## Next authorized work
 
-Next authorized phase: P09, only after an explicit P09 prompt.
+Next authorized phase: P10, only after an explicit P10 prompt.

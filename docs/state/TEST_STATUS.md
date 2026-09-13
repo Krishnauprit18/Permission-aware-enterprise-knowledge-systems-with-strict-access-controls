@@ -103,3 +103,23 @@
 - Fast gate: `make verify` passed. Backend unit tests passed 34 selected tests with 97.98% domain coverage; frontend tests passed 13 tests with 98.87% configured coverage; the default integration run passed 4 tests and skipped 5 PostgreSQL tests because the local database was not exposed; security tests passed 32 tests with 2 PostgreSQL skips; Bandit and Semgrep passed with 0 findings.
 - Release gate: `make verify-release` passed, including Markdown lint (`markdownlint-cli2 v0.18.1`, 69 files, 0 errors), dependency audits with no known vulnerabilities, detect-secrets, CycloneDX SBOM generation, ShellCheck fallback, Docker BuildKit checks, and Trivy configuration scans.
 - Known non-failing warnings: existing Starlette TestClient and AnyIO deprecation warnings remain. No P08-specific warning or failure was introduced.
+
+## P09
+
+- Scope: synthetic document/filesystem, support-ticket, Slack-thread, and call
+  transcript connectors plus raw-ingestion orchestration. No parsing, chunking,
+  embedding, OpenSearch indexing, retrieval, reranking, or generation.
+- Focused evidence: `uv run --directory backend pytest tests/unit/test_ingestion.py -q` passed 14 tests covering first sync, unchanged replay, update, deletion, malformed and missing records, interruption/restart, duplicate identity, hostile path, ACL mapping, bounded retry, log hygiene, and object-store integrity.
+- Fast gate: `make verify` passed. Backend unit tests passed 48 selected tests
+  with 93.29% measured domain coverage; frontend tests passed 13 tests with
+  98.87% configured coverage; integration passed 4 tests with 5 PostgreSQL
+  skips in the default private-platform environment; security passed 39 tests
+  with 2 PostgreSQL skips; Ruff, strict mypy, TypeScript, Markdown lint,
+  Bandit, and Semgrep passed.
+- Release gate: `make verify-release` passed. Runtime dependency audits found
+  no known vulnerabilities, npm audit passed, detect-secrets passed, SBOMs
+  generated, and ShellCheck/container lint/Trivy configuration checks passed
+  through the pinned local fallback containers.
+- Non-failing warnings: existing Starlette TestClient and AnyIO deprecation
+  warnings remain. The release scan rewrites `.secrets.baseline` generation
+  time; it was restored to the tracked value before checkpointing.
