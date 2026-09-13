@@ -154,4 +154,4 @@ reset-demo:
 
 seed-demo:
 	$(MAKE) dataset-validate
-	@printf '%s\n' 'Synthetic demo/evaluation fixtures validated; ingestion and database loading remain future phase work.'
+	@printf '%s\n' 'Synthetic demo/evaluation fixtures validated; runtime ingestion job bootstrap remains future phase work.'

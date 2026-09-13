@@ -374,6 +374,43 @@ class PostgresCanonicalRepository(CanonicalRepository):
         if row is None or _required_str(row, "job_id") != str(job.job_id):
             raise PersistenceError("ingestion job idempotency conflict")
 
+    def update_ingestion_job(self, job: IngestionJob) -> None:
+        self._execute(
+            """
+            UPDATE ingestion_jobs
+            SET status = %s, error_code = %s, started_at = %s, finished_at = %s
+            WHERE job_id = %s AND tenant_id = %s
+            """,
+            (
+                job.status.value,
+                job.error_code,
+                job.started_at,
+                job.finished_at,
+                str(job.job_id),
+                str(job.tenant_id),
+            ),
+        )
+        row = self._fetchone(
+            "SELECT job_id FROM ingestion_jobs WHERE job_id = %s AND tenant_id = %s",
+            (str(job.job_id), str(job.tenant_id)),
+        )
+        if row is None:
+            raise PersistenceError("ingestion job update target was not found")
+
+    def has_ingestion_checkpoint(
+        self, connection_id: str, external_cursor: str
+    ) -> bool:
+        row = self._fetchone(
+            """
+            SELECT EXISTS(
+                SELECT 1 FROM ingestion_checkpoints
+                WHERE connection_id = %s AND external_cursor = %s
+            ) AS present
+            """,
+            (connection_id, external_cursor),
+        )
+        return bool(row and row.get("present") is True)
+
     def save_ingestion_checkpoint(self, checkpoint: IngestionCheckpoint) -> None:
         self._execute(
             """

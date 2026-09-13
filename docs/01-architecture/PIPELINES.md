@@ -11,6 +11,12 @@ connector -> raw store -> parse -> normalize -> ACL map -> classify -> chunk
           -> embed -> index -> checkpoint
 ```
 
+P09 implements only the connector, raw-store handoff, canonical metadata and
+version persistence, ACL-intent sink, deletion tombstone, and post-success
+checkpoint boundary. Parsing, chunking, embedding, indexing, and retrieval
+remain future phases. See `docs/01-architecture/INGESTION.md` for the concrete
+ordering and failure contract.
+
 1. **Connector** emits a typed source envelope with tenant, source identity,
    revision, timestamps, content locator, integrity metadata, and deletion state.
 2. **Raw store** writes the original payload to a tenant-scoped MinIO location

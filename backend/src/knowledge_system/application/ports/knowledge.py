@@ -1,7 +1,6 @@
 """Typed ports for future ingestion, retrieval, generation, and audit adapters."""
 
-from collections.abc import Iterable, Sequence
-from datetime import datetime
+from collections.abc import Sequence
 from typing import Protocol
 
 from knowledge_system.application.ports.authorization import AuthorizationPort
@@ -12,12 +11,6 @@ from knowledge_system.domain.contracts import (
     EvidenceId,
     PrincipalContext,
 )
-
-
-class Connector(Protocol):
-    """Reads source records without deciding application authorization."""
-
-    def fetch_changed(self, since: datetime | None) -> Iterable[bytes]: ...
 
 
 class Parser(Protocol):

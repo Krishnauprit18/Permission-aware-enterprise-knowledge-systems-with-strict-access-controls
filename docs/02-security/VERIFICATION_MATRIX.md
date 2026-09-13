@@ -26,7 +26,7 @@ This matrix defines planned engineering verification guidance. It does not claim
 | Authentication and session binding | Identity/session threat tests, invalid-session tests, privileged-action audit evidence | FR-AUTH-001; T-01 |
 | Tenant and account isolation | Cross-tenant/account authorization matrix; model-boundary canary tests; cache tests | FR-AUTHZ-001/002; INV-TENANT-001; T-04/T-06/T-15 |
 | View versus external share | Separate policy decision tests for internal, customer, and restricted audiences; redaction/refusal evidence | FR-AUTHZ-003; T-10 |
-| Ingestion, parsing, attachments | Provenance, parser bounds, SSRF, malformed-file, attachment quarantine, and deletion tests | FR-INGEST-001/002; T-07/T-13/T-14 |
+| Ingestion, parsing, attachments | Connector path/type/size/hash/duplicate checks, provenance, retry/checkpoint ordering, parser bounds, SSRF, malformed-file, attachment quarantine, and deletion tests | FR-INGEST-001/002; T-07/T-13/T-14/T-42/T-43/T-44 |
 | Retrieval, reranking, and vectors | Lexical/semantic isolation tests, pre-rerank authorization instrumentation, vector-probing tests | FR-RETRIEVE-001/002; INV-AUTHZ-001; T-04/T-19 |
 | Authority, freshness, and conflict | Revision, effective-time, supersession, poisoning, and refusal fixtures | FR-EVIDENCE-001; T-09 |
 | Grounded generation and citations | Claim-to-evidence validator tests, fabricated-ID tests, malformed-output tests, refusal tests | FR-ANSWER-001/002; INV-CITE-001; T-08/T-20/T-21 |
