@@ -6,3 +6,4 @@ Development workflow, quality gates, test evidence, release evidence, dependency
 - `TOOLCHAIN.md` records reproducible local tools and exact commands.
 - `FAILURE_TRIAGE.md` maps gate failures to the first diagnostic action.
 - `TEST_EVIDENCE_TEMPLATE.md` and `RELEASE_EVIDENCE_TEMPLATE.md` standardize evidence records.
+- `DATABASE_MIGRATIONS.md` defines the explicit migration runner, checksum ledger, review rules, and failure triage.

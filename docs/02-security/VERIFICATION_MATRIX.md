@@ -86,6 +86,17 @@ ASVS 5.0.0 is the detailed application verification reference. The future implem
 | Revocation and cache versioning | Each request consults current relationship truth; decision and scope fingerprints bind principal, tenant, relation, object/scope, outcome, model, tuple, and policy versions. |
 | Safe audit | Decision audit metadata contains action, outcome, reason, versions, correlation ID, duration, and fingerprint without raw graph details or content. |
 
+### P07 persistence verification
+
+| Persistence property | Project verification |
+|---|---|
+| Migration authority | `backend/migrations/0001_initial.sql` is applied only by the explicit checksum-verified runner; runtime code contains no DDL. |
+| Tenant integrity | Tenant-safe foreign keys, source identity uniqueness, version/chunk relationships, and typed repository errors reject mismatched data. |
+| Stable identity | `stable_chunk_id()` and immutable version checks support deterministic re-ingestion and citation reconstruction. |
+| Lifecycle/deletion | Deleted source items/chunks require deletion timestamps; tombstones carry effective and retention times and are idempotent. |
+| Transaction safety | `PostgresUnitOfWork` commits successful operations and rolls back exceptional operations; integration tests assert no partial rows. |
+| Secret minimization | Principal rows contain only external identity references; connections contain only secret references; traces store hashes and IDs, not raw queries or context. |
+
 ## OWASP Top 10:2025 mapping
 
 | OWASP category | Planned verification |

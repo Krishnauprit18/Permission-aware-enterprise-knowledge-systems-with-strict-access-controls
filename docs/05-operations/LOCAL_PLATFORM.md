@@ -2,9 +2,10 @@
 
 ## Scope
 
-P04 supplies local infrastructure and P06 adds only the OpenFGA authorization
-model, synthetic relationship tuples, and bootstrap operation. No product
-tables, connectors, indexes, models, or source demo content are created yet.
+P04 supplies local infrastructure, P06 adds the OpenFGA authorization model and
+bootstrap operation, and P07 adds only canonical PostgreSQL metadata tables and
+explicit migrations. No connectors, indexes, models, or source demo content are
+created yet.
 The Compose project is `permission-aware-knowledge` and all services use the
 private `platform` network.
 
@@ -23,9 +24,11 @@ make platform-config
 make up
 make platform-status
 make openfga-bootstrap
+make db-migrate
+make db-schema-doc
 ```
 
-`platform-config` creates `.env.local` with mode `0600` and validates the rendered Compose model. `up` waits for long-running service health checks, waits for the OpenFGA migration to complete, runs the MinIO bucket initializer, bootstraps the imported Keycloak demo users with generated local passwords, and creates or updates the deterministic OpenFGA model and tuples. No blind sleep is used. `platform-status` prints Compose status and runs endpoint smoke checks.
+`platform-config` creates `.env.local` with mode `0600` and validates the rendered Compose model. `up` waits for long-running service health checks, waits for the OpenFGA migration to complete, runs the MinIO bucket initializer, bootstraps the imported Keycloak demo users with generated local passwords, creates or updates the deterministic OpenFGA model and tuples, and applies the checked-in PostgreSQL migrations. No blind sleep is used. `platform-status` prints Compose status and runs endpoint smoke checks. `db-migrate` is safe to repeat and `db-schema-doc` regenerates the canonical schema inventory from PostgreSQL.
 
 The smoke script first probes loopback ports. If the active Docker context does not forward published ports to the shell, it uses the pinned curl utility image on the private Compose network. This fallback is for verification only; it does not change the default host bindings.
 
@@ -77,11 +80,16 @@ store and authorization-model identifiers in `.env.local` are local operational
 state, not credentials. `make reset-demo` deletes the database/volumes and the
 next startup creates a fresh store/model and updates these identifiers.
 
+The product `knowledge` database is migrated by `scripts/migrate-database.sh`.
+The runner records migration filenames and SHA-256 checksums in
+`schema_migrations`; it fails on checksum drift and never silently skips a
+failed migration. The runtime application does not create tables.
+
 `make down` removes containers and the private network but preserves named volumes. `make reset-demo` removes this project’s containers, network, and named volumes, then recreates the empty platform, `raw` bucket, and deterministic OpenFGA relationship state. It does not remove `.env.local`, Docker images, or files outside the project. There is no product source/demo seed yet.
 
 ## Backup and restore
 
-P04 does not define a product backup contract. Operators may make local, ignored backups of the platform volumes using Docker-native tooling. For PostgreSQL, use a password-free invocation pattern that reads the database user from the local environment without printing it:
+P07 adds canonical metadata but does not define a complete product backup contract. Operators may make local, ignored backups of the platform volumes using Docker-native tooling. For PostgreSQL, use a password-free invocation pattern that reads the database user from the local environment without printing it:
 
 ```bash
 set -a
@@ -103,6 +111,6 @@ All Compose services have explicit healthchecks. Distroless images use native ex
 
 - `make up` fails during image pull: verify the configured registry is reachable and that the pinned image manifest supports the host architecture.
 - OpenSearch restarts with a password validation error: rotate the local bootstrap password, then run `make reset-demo` if the volume has already been initialized.
-- A one-shot migration or initializer exits non-zero: inspect `docker compose logs openfga-migrate minio-init`; do not manually mark the platform ready.
+- A one-shot migration or initializer exits non-zero: inspect `docker compose logs openfga-migrate minio-init`, then inspect the migration runner output; do not manually mark the platform ready.
 - Host loopback probes fail while container health is green: inspect `docker context show`; the smoke script's private-network fallback is expected for remote or VM-backed Docker contexts.
 - Missing ShellCheck or Trivy blocks `make verify-release`: install the tools locally and rerun the release gate; do not weaken or skip the target.

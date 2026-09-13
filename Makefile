@@ -11,7 +11,7 @@ TRIVY_IMAGE := aquasec/trivy:0.56.2@sha256:9aebdee5e85129a1bdd9977676baa6cf05791
 
 .PHONY: bootstrap fmt lint lint-docs typecheck test test-unit test-integration \
 	test-security sbom scan container-lint container-scan architecture-test verify verify-release \
-	shellcheck platform-config platform-status keycloak-bootstrap openfga-bootstrap up down reset-demo seed-demo
+	shellcheck platform-config platform-status keycloak-bootstrap openfga-bootstrap db-migrate db-schema-doc up down reset-demo seed-demo
 
 bootstrap:
 	command -v uv >/dev/null
@@ -58,6 +58,7 @@ shellcheck:
 	else \
 		docker run --rm -v "$(CURDIR):/mnt:ro" $(SHELLCHECK_IMAGE) \
 			/mnt/scripts/bootstrap-platform.sh /mnt/scripts/bootstrap-keycloak.sh /mnt/scripts/bootstrap-openfga.sh \
+			/mnt/scripts/migrate-database.sh /mnt/scripts/generate-db-schema-doc.sh \
 			/mnt/scripts/compose-local.sh \
 			/mnt/scripts/platform-smoke.sh /mnt/scripts/verify-local.sh \
 			/mnt/scripts/verify-release.sh; \
@@ -117,12 +118,19 @@ up:
 	./scripts/compose-local.sh run --rm --no-deps minio-init
 	./scripts/bootstrap-keycloak.sh
 	./scripts/bootstrap-openfga.sh
+	./scripts/migrate-database.sh
 
 keycloak-bootstrap:
 	./scripts/bootstrap-keycloak.sh
 
 openfga-bootstrap:
 	./scripts/bootstrap-openfga.sh
+
+db-migrate:
+	./scripts/migrate-database.sh
+
+db-schema-doc:
+	./scripts/generate-db-schema-doc.sh
 
 platform-status:
 	./scripts/bootstrap-platform.sh
@@ -139,6 +147,7 @@ reset-demo:
 	./scripts/compose-local.sh run --rm --no-deps minio-init
 	./scripts/bootstrap-keycloak.sh
 	./scripts/bootstrap-openfga.sh
+	./scripts/migrate-database.sh
 
 seed-demo:
 	@printf '%s\n' 'P04 platform has no product demo seed data; later phases own this target.'

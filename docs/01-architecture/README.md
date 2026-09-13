@@ -8,4 +8,5 @@ System boundaries, typed contracts, data flow, storage, source adapters, retriev
 - `AUTHORIZATION_ARCHITECTURE.md` defines OpenFGA-backed current authorization and the metadata-first candidate/fine-check boundary.
 - `PORTS_AND_DEPENDENCY_RULES.md` defines typed ports, security-bearing types, layering, and import rules.
 - `VERSIONING.md` defines API, index, embedding, prompt, evaluation, authorization, schema, and release compatibility versions.
+- `DATA_MODEL.md` defines canonical PostgreSQL entities, lifecycle, stable IDs, and authority boundaries.
 - `ARCHITECTURE_REVIEW.md` records the P02 invariant, pipeline, dependency, deployment, and residual-risk review.

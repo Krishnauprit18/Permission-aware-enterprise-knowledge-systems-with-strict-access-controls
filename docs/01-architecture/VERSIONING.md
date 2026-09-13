@@ -80,7 +80,8 @@ matrix, revocation, cross-tenant, and shareability regression tests.
 
 ## 7. Database and object schema version
 
-PostgreSQL schema changes use ordered migrations with upgrade and rollback or
+The current PostgreSQL schema generation is `0001_initial`. PostgreSQL schema
+changes use ordered, checksum-verified migrations with upgrade and rollback or
 forward-recovery evidence. Raw object manifests, normalized documents, chunks,
 audit events, and pipeline checkpoints carry explicit schema/component versions.
 Readers reject unknown incompatible versions rather than guessing.
