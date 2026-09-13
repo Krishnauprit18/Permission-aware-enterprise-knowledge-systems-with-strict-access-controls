@@ -1,0 +1,1 @@
+"""Local worker entrypoint placeholder."""
