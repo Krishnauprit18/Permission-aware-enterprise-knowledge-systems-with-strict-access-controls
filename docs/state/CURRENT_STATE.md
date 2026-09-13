@@ -3,11 +3,11 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P09`
+- Current phase: `P10`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
 - Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, and P09 provides typed fixture connectors plus raw-ingestion orchestration; parsing, retrieval, indexing, reranking, and generation remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`.
 
 ## Established invariants
 
@@ -131,6 +131,35 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
   PostgreSQL tests when the private database is not exposed to localhost.
 - P09 implementation checkpoint: `7fabcf0` (`feat(P09): implement connector ingestion orchestration`) is pushed to `origin/master`.
 
+## P10 parsing and chunking baseline
+
+- `knowledge_system.domain.content` defines typed source locators, parsed and
+  normalized documents, bounded content chunks, deterministic lexical token
+  counts, chunking limits, metrics, and conservative classification resolution.
+- `FixtureContentParser` handles document/policy/contract sections, nested
+  Slack threads, support-ticket metadata/comments, transcript turn windows,
+  and structured hourly records. `SafeContentNormalizer` applies UTF-8
+  replacement, Unicode NFC, line/control normalization, and active-content
+  removal without executing source text.
+- `BoundedContentChunker` respects semantic blocks first, then line/word
+  boundaries, with a character split only for an unbreakable token. Every
+  emitted chunk retains parent document/version, tenant/account/department,
+  timestamps, classification/shareability, authority, ACL references, hashes,
+  and source-native citation locators. No embedding or index write exists.
+- P10 focused evidence: 11 content-pipeline tests passed; the full unit gate
+  passed 59 tests with 90.30% domain coverage; the default integration gate
+  passed 4 tests and skipped 5 PostgreSQL tests because the private database
+  was not exposed; security passed 40 tests with 2 PostgreSQL skips.
+- P10 `make verify` and `make verify-release` passed, including Markdown lint
+  (73 files, 0 errors), strict mypy/Ruff/TypeScript, Bandit, Semgrep, runtime
+  dependency audit, npm audit, detect-secrets, SBOM, ShellCheck fallback,
+  Docker BuildKit checks, and Trivy configuration scans.
+- P10 implementation checkpoint: `e112207` (`feat(P10): implement parsing and chunking pipeline`) is pushed to `origin/master`.
+- P10 known limits: parser support is limited to the bounded source shapes in
+  the synthetic corpus; the lexical token count is a safety bound rather than
+  a model tokenizer; persistence, embedding, indexing, retrieval, and live
+  authorization integration remain later phases.
+
 ## Next authorized work
 
-Next authorized phase: P10, only after an explicit P10 prompt.
+Next authorized phase: P11, only after an explicit P11 prompt.

@@ -123,3 +123,11 @@
 - Non-failing warnings: existing Starlette TestClient and AnyIO deprecation
   warnings remain. The release scan rewrites `.secrets.baseline` generation
   time; it was restored to the tracked value before checkpointing.
+
+## P10
+
+- Focused content evidence: `uv run --directory backend pytest tests/unit/test_content_pipeline.py -q --no-cov` passed 11 tests. Coverage includes document/policy-style sections, tables/code blocks, nested Slack replies, ticket comment windows, transcript turn locators, malformed Unicode, active-content stripping, prompt-injection-as-data, empty/huge inputs, bounds, restricted metadata/ACL propagation, versioned IDs, unknown classification, malformed JSON, and unsupported/deep sources.
+- Fast gate: `make verify` passed. Backend unit tests passed 59 selected tests with 90.30% measured domain coverage; frontend tests passed 13 tests with 98.87% configured coverage; integration passed 4 tests with 5 PostgreSQL skips in the default private-platform environment; security passed 40 tests with 2 PostgreSQL skips; Ruff, strict mypy, TypeScript, Markdown lint, Bandit, and Semgrep passed.
+- Release gate: `make verify-release` passed. Runtime dependency audits found no known vulnerabilities, npm audit passed, detect-secrets passed, SBOMs generated, and ShellCheck/container lint/Trivy configuration checks passed through the pinned local fallback containers.
+- Markdown tooling note: the baseline environment did have the repository's pinned `markdownlint-cli2` available during P10 verification; when the uv cache was read-only, the gate was rerun with approved local cache access. The existing tooling-gap record remains applicable to environments where `markdownlint` is unavailable and structural checks are the fallback.
+- Non-failing warnings: existing Starlette TestClient and AnyIO deprecation warnings remain. The release scan rewrites `.secrets.baseline` generation time; it was restored to the tracked value before checkpointing.
