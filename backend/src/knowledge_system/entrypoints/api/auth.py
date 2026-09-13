@@ -67,7 +67,7 @@ def get_correlation_id(request: Request) -> str:
     return cast(str, getattr(request.state, "correlation_id", "unknown"))
 
 
-def current_identity(
+async def current_identity(
     request: Request,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),  # noqa: B008
 ) -> ValidatedIdentity:
@@ -96,7 +96,7 @@ def current_identity(
 
 
 @router.get("/me", response_model=PrincipalResponse)
-def current_principal(
+async def current_principal(
     identity: ValidatedIdentity = Depends(current_identity),  # noqa: B008
 ) -> PrincipalResponse:
     """Return the authenticated principal without making an authorization decision."""
@@ -110,7 +110,7 @@ def current_principal(
 
 
 @router.post("/logout", response_model=LogoutResponse)
-def logout(
+async def logout(
     request: Request,
     response: Response,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),  # noqa: B008

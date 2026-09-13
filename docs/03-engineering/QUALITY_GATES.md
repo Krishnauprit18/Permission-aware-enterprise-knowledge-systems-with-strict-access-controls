@@ -72,7 +72,7 @@ Run `make bootstrap` once on a new checkout. It installs Python 3.12 through uv,
 ## Security-tooling policy
 
 - Python and frontend dependencies are pinned by `backend/uv.lock` and `frontend/package-lock.json`.
-- `make test-security` is deterministic and local; its Semgrep policy is the Python preset plus language-native checks.
+- `make test-security` is deterministic and local; its Semgrep policy is the checked-in offline policy at `security/semgrep.yml` plus Bandit and language-native checks. Remote rule presets are not required.
 - `make scan` performs dependency and secret checks. Findings are triaged by reachability, exploitability, and whether the dependency is in a shipped path.
 - `make sbom` emits CycloneDX JSON for review and archival. Generated reports are ignored by Git and must not contain secrets.
 - Container linting is syntax/policy validation. It validates the rendered Compose model and Dockerfiles. `make container-scan` requires local Trivy and checks the Compose and Dockerfile configuration at high and critical severity. Image vulnerability scanning is reserved for a later image-build phase; when an image exists, extend this target rather than treating lint as vulnerability coverage.

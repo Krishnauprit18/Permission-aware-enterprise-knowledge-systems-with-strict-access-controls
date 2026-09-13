@@ -2,10 +2,9 @@
 
 from uuid import uuid4
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from pydantic import BaseModel
-from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
-from starlette.responses import Response
+from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 from knowledge_system.entrypoints.api.auth import router as auth_router
 
@@ -20,24 +19,37 @@ app = FastAPI(title="Permission-Aware Knowledge System", version="0.1.0")
 app.include_router(auth_router)
 
 
-class CorrelationIdMiddleware(BaseHTTPMiddleware):
-    """Generate a fresh correlation ID and never trust a client token as one."""
+class CorrelationIdMiddleware:
+    """Generate a fresh correlation ID without a blocking middleware bridge."""
 
-    async def dispatch(
-        self, request: Request, call_next: RequestResponseEndpoint
-    ) -> Response:
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
         correlation_id = str(uuid4())
-        request.state.correlation_id = correlation_id
-        response = await call_next(request)
-        response.headers["X-Correlation-ID"] = correlation_id
-        return response
+        state = dict(scope.get("state", {}))
+        state["correlation_id"] = correlation_id
+        scoped = {**scope, "state": state}
+
+        async def send_with_correlation(message: Message) -> None:
+            if message["type"] == "http.response.start":
+                headers = list(message["headers"])
+                headers.append((b"x-correlation-id", correlation_id.encode("ascii")))
+                message = {**message, "headers": headers}
+            await send(message)
+
+        await self.app(scoped, receive, send_with_correlation)
 
 
 app.add_middleware(CorrelationIdMiddleware)
 
 
 @app.get("/healthz", response_model=HealthResponse)
-def healthz() -> HealthResponse:
+async def healthz() -> HealthResponse:
     """Report process liveness without exposing dependency or data details."""
 
     return HealthResponse(status="ok")

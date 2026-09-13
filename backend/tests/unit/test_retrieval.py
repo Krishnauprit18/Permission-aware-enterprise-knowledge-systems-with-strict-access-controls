@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
+from dataclasses import replace
 from datetime import UTC, datetime
 from typing import cast
 
@@ -39,6 +40,7 @@ from knowledge_system.domain.retrieval import (
     RetrievalAuthorizationError,
     RetrievalInputError,
     RetrievalRequest,
+    candidate_from_envelope,
     fuse_rrf,
 )
 
@@ -452,3 +454,102 @@ def test_malformed_authorization_scope_is_failed_closed() -> None:
                 decision_fingerprint="f" * 64,
             ),
         )
+
+
+@pytest.mark.unit
+def test_retrieval_input_bounds_are_rejected() -> None:
+    with pytest.raises(RetrievalInputError):
+        RequestedQueryFilters(account_ids=("acme", "acme"))
+    with pytest.raises(RetrievalInputError):
+        RequestedQueryFilters(department="Legal OR match_all")
+    with pytest.raises(RetrievalInputError):
+        RequestedQueryFilters(
+            updated_after=datetime(2026, 9, 13, tzinfo=UTC).replace(tzinfo=None)
+        )
+    with pytest.raises(RetrievalInputError):
+        RequestedQueryFilters(
+            updated_after=datetime(2026, 9, 14, tzinfo=UTC),
+            updated_before=datetime(2026, 9, 13, tzinfo=UTC),
+        )
+    with pytest.raises(RetrievalInputError):
+        RetrievalRequest(" ")
+    with pytest.raises(RetrievalInputError):
+        RetrievalRequest("query", result_limit=0)
+
+
+@pytest.mark.unit
+def test_scope_and_candidate_validation_fail_closed() -> None:
+    with pytest.raises(RetrievalAuthorizationError):
+        AuthorizationFilter.from_scope(
+            principal("alice", tenant="northstar"),
+            AuthorizationScope(
+                tenant_id="harbor-labs",
+                relation="can_view",
+                resource_ids=(),
+                authorization_model_id="model",
+                tuple_version="tuples",
+                policy_version="policy",
+                decision_fingerprint="f" * 64,
+            ),
+        )
+    with pytest.raises(RetrievalAuthorizationError):
+        AuthorizationFilter.from_scope(
+            principal("alice"),
+            AuthorizationScope(
+                tenant_id="northstar",
+                relation="can_view",
+                resource_ids=(),
+                authorization_model_id="",
+                tuple_version="tuples",
+                policy_version="policy",
+                decision_fingerprint="f" * 64,
+            ),
+        )
+
+    allowed = AuthorizationDecision(
+        allowed=True,
+        authorization_model_id="model",
+        tuple_version="tuples",
+        policy_version="policy",
+        decision_fingerprint="a" * 64,
+        correlation_id="corr-alice",
+    )
+    with pytest.raises(RetrievalInputError):
+        candidate_from_envelope(replace(envelope("acme-note"), provenance={}), allowed)
+    with pytest.raises(RetrievalInputError):
+        candidate_from_envelope(
+            replace(envelope("acme-note"), provenance={"updated_at": "invalid"}),
+            allowed,
+        )
+    with pytest.raises(RetrievalInputError):
+        candidate_from_envelope(
+            replace(
+                envelope("acme-note"), provenance={"updated_at": "2026-09-13T00:00:00"}
+            ),
+            allowed,
+        )
+    with pytest.raises(RetrievalAuthorizationError):
+        candidate_from_envelope(
+            envelope("acme-note"),
+            AuthorizationDecision(
+                allowed=False,
+                outcome=AuthorizationOutcome.DENY,
+                authorization_model_id="model",
+                tuple_version="tuples",
+                policy_version="policy",
+                decision_fingerprint="d" * 64,
+                correlation_id="corr-alice",
+            ),
+        )
+    with pytest.raises(RetrievalInputError):
+        candidate_from_envelope(replace(envelope("acme-note"), chunk_id=""), allowed)
+
+
+@pytest.mark.unit
+def test_rrf_validation_and_empty_chunk_behavior() -> None:
+    with pytest.raises(RetrievalInputError):
+        fuse_rrf((), (), limit=0)
+    with pytest.raises(RetrievalInputError):
+        fuse_rrf((), (), limit=1, rrf_k=0)
+    empty = replace(envelope("empty"), chunk_id="")
+    assert fuse_rrf((empty,), (), limit=1)[0] == ()

@@ -35,7 +35,7 @@ make container-lint
 make container-scan
 ```
 
-`make scan` requires `pip-audit` and `detect-secrets` from the backend development group, the locally installed Semgrep executable, and npm registry metadata for `npm audit`. `make container-lint` validates the rendered Compose model, then prefers Hadolint and otherwise uses Docker BuildKit's `docker build --check` when supported. `make container-scan` requires Trivy and checks Compose plus Dockerfile configuration. ShellCheck, Hadolint, Trivy, Syft, and Gitleaks are explicit local prerequisites when their deeper release checks are enabled; no hosted CI is required.
+`make scan` requires `pip-audit` and `detect-secrets` from the backend development group, the locally installed Semgrep executable, and npm registry metadata for `npm audit`. Semgrep uses the checked-in offline policy at `security/semgrep.yml`; it does not download a remote preset. `make container-lint` validates the rendered Compose model, then prefers Hadolint and otherwise uses Docker BuildKit's `docker build --check` when supported. `make container-scan` requires Trivy and checks Compose plus Dockerfile configuration. ShellCheck, Hadolint, Trivy, Syft, and Gitleaks are explicit local prerequisites when their deeper release checks are enabled; no hosted CI is required.
 
 ## P04 platform commands
 

@@ -8,6 +8,7 @@ REPORTS_DIR := $(CURDIR)/reports
 PLATFORM_SERVICES := postgres opensearch keycloak openfga minio jaeger otel-collector prometheus
 SHELLCHECK_IMAGE := koalaman/shellcheck:stable@sha256:b9389b73c8f26f710a7171cb7d8848a34a9c1e07a7865e727c9ec4ce99f9a83f
 TRIVY_IMAGE := aquasec/trivy:0.56.2@sha256:9aebdee5e85129a1bdd9977676baa6cf0579195fc4809570cc9dd55f6e92863c
+SEMGREP_SCAN := SEMGREP_SETTINGS_FILE="$${TMPDIR:-/tmp}/knowledge-system-semgrep-settings.yml" SEMGREP_LOG_FILE="$${TMPDIR:-/tmp}/knowledge-system-semgrep.log" SEMGREP_VERSION_CACHE_PATH="$${TMPDIR:-/tmp}/knowledge-system-semgrep-version" SEMGREP_SEND_METRICS=off semgrep --disable-version-check --config security/semgrep.yml
 
 .PHONY: bootstrap fmt lint lint-docs prompt-integrity dataset-validate typecheck test test-unit test-integration \
  test-security sbom scan container-lint container-scan architecture-test verify verify-release reindex-demo \
@@ -52,7 +53,7 @@ test-integration:
 
 test-security:
 	$(BACKEND_RUN) bandit --quiet --recursive src
-	semgrep --config p/python --error --quiet backend/src
+	$(SEMGREP_SCAN) --error --quiet backend/src
 	$(BACKEND_RUN) pytest -m security --no-cov
 
 architecture-test:
@@ -82,7 +83,7 @@ scan:
 	$(BACKEND_RUN) pip-audit -r "$(REPORTS_DIR)/backend-requirements.txt"
 	npm --prefix frontend audit --omit=dev --audit-level=high
 	$(BACKEND_RUN) detect-secrets scan --all-files --baseline "$(CURDIR)/.secrets.baseline" --exclude-files '(^|/)(\.git|\.venv|node_modules|coverage|dist|build|reports|\.mypy_cache|\.pytest_cache|\.ruff_cache)(/|$$)' "$(CURDIR)"
-	semgrep --config p/python --error backend/src
+	$(SEMGREP_SCAN) --error backend/src
 
 container-lint:
 	./scripts/bootstrap-platform.sh

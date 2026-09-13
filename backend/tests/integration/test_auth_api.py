@@ -1,10 +1,11 @@
 """HTTP-level authentication contract regressions."""
 
+import asyncio
 from dataclasses import dataclass
 from time import time
 
+import httpx
 import pytest
-from fastapi.testclient import TestClient
 
 from knowledge_system.application.authentication import (
     AuthenticationService,
@@ -25,7 +26,7 @@ class StaticValidator:
 
 
 @pytest.fixture
-def client() -> TestClient:
+def configured_authentication() -> None:
     identity = ValidatedIdentity(
         principal=PrincipalContext(
             subject_id=PrincipalId("alice-subject"),
@@ -38,13 +39,31 @@ def client() -> TestClient:
     app.state.authentication_service = AuthenticationService(
         StaticValidator(identity), InMemorySessionRevocationStore()
     )
-    return TestClient(app)
+
+
+def request(
+    method: str,
+    path: str,
+    *,
+    headers: dict[str, str] | None = None,
+) -> httpx.Response:
+    async def send_request() -> httpx.Response:
+        async with httpx.AsyncClient(
+            transport=httpx.ASGITransport(app=app),
+            base_url="http://testserver",
+        ) as client:
+            return await client.request(method, path, headers=headers)
+
+    return asyncio.run(send_request())
 
 
 @pytest.mark.integration
 @pytest.mark.security
-def test_missing_bearer_token_is_generic_and_correlated(client: TestClient) -> None:
-    response = client.get("/api/v1/auth/me")
+def test_missing_bearer_token_is_generic_and_correlated(
+    configured_authentication: None,
+) -> None:
+    del configured_authentication
+    response = request("GET", "/api/v1/auth/me")
     assert response.status_code == 401
     assert response.json() == {
         "detail": "authentication required",
@@ -54,8 +73,12 @@ def test_missing_bearer_token_is_generic_and_correlated(client: TestClient) -> N
 
 @pytest.mark.integration
 @pytest.mark.security
-def test_valid_identity_is_returned_without_token_material(client: TestClient) -> None:
-    response = client.get(
+def test_valid_identity_is_returned_without_token_material(
+    configured_authentication: None,
+) -> None:
+    del configured_authentication
+    response = request(
+        "GET",
         "/api/v1/auth/me",
         headers={"Authorization": "Bearer synthetic-token"},
     )
@@ -70,15 +93,18 @@ def test_valid_identity_is_returned_without_token_material(client: TestClient) -
 
 @pytest.mark.integration
 @pytest.mark.security
-def test_logout_then_reuse_is_rejected(client: TestClient) -> None:
-    logout_response = client.post(
+def test_logout_then_reuse_is_rejected(configured_authentication: None) -> None:
+    del configured_authentication
+    logout_response = request(
+        "POST",
         "/api/v1/auth/logout",
         headers={"Authorization": "Bearer synthetic-token"},
     )
     assert logout_response.status_code == 200
     assert logout_response.json() == {"status": "logged_out"}
 
-    response = client.get(
+    response = request(
+        "GET",
         "/api/v1/auth/me",
         headers={"Authorization": "Bearer synthetic-token"},
     )

@@ -1,0 +1,21 @@
+rules:
+  - id: python-dangerous-eval
+    languages: [python]
+    message: Do not evaluate untrusted text as Python code.
+    severity: ERROR
+    patterns:
+      - pattern-either:
+          - pattern: eval(...)
+          - pattern: exec(...)
+
+  - id: python-unsafe-deserialization
+    languages: [python]
+    message: Do not deserialize untrusted bytes with pickle.
+    severity: ERROR
+    pattern: pickle.loads(...)
+
+  - id: python-subprocess-shell-true
+    languages: [python]
+    message: Avoid shell=True for subprocess calls; use an argument list.
+    severity: ERROR
+    pattern: subprocess.$FUNC(..., shell=True, ...)
