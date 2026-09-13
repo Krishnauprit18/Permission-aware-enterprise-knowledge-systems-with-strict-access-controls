@@ -63,6 +63,17 @@ ASVS 5.0.0 is the detailed application verification reference. The future implem
 | Logging and monitoring | Structured redacted audit events, operator authorization, integrity, retention, and log-canary tests. |
 | Configuration and dependency security | Secure defaults, pinned lockfiles, migration review, SBOM, vulnerability scanning, and provenance verification. |
 
+### P05 authentication verification
+
+| Authentication property | Project verification |
+|---|---|
+| Authorization Code + PKCE | Frontend constructs a public-client code request with S256, binds callback state, and keeps the verifier transient. |
+| Access-token validation | Backend tests signature/key selection, RS256 allowlist, issuer, audience, required claims, expiry, not-before, issued-at, and explicit 0-300 second clock skew. |
+| Principal boundary | `/api/v1/auth/me` returns only the validated subject, tenant, and groups; no client-provided claim or tenant selector grants resource access. |
+| Session lifecycle | Logout revokes a validated sid/jti handle in the local process, browser memory is cleared, and reuse is rejected until expiry. |
+| Error/log hygiene | Missing and invalid credentials use the same generic 401 response; correlation IDs are fresh server values; allowlisted logs exclude bearer, cookie, claim, and password values. |
+| Cookie/CSRF posture | Current bearer transport uses no auth cookie. A future cookie/BFF route is blocked until SameSite/HttpOnly/Secure, CSRF, origin, rotation, and invalidation tests exist. |
+
 ## OWASP Top 10:2025 mapping
 
 | OWASP category | Planned verification |

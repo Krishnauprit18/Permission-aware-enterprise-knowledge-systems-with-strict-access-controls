@@ -65,6 +65,15 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - `docs/05-operations/LOCAL_PLATFORM.md` records ports, local-only posture, credentials, backup/reset semantics, data locations, container users, and failure triage.
 - P04 evidence: `make platform-config`, `make up`, `make platform-status`, `make container-lint`, `make shellcheck`, `make container-scan`, `make verify`, `make scan`, `make sbom`, and `make verify-release` passed. No product business features were added.
 
+## P05 identity and authentication baseline
+
+- Local Keycloak realm bootstrap is deterministic and synthetic: a public browser client uses Authorization Code + S256 PKCE; demo passwords are generated into ignored mode-600 `.env.local` and are never committed or logged.
+- Backend OIDC validation is fail-closed and typed. It validates the configured issuer, audience, RS256 algorithm, JWKS signature, required claims, expiry, not-before, issued-at, and an explicit bounded clock-skew policy before producing a principal.
+- The browser keeps access tokens in memory only. Only transient PKCE state/verifier values use session storage; no access or ID token is written to localStorage or sessionStorage.
+- Auth endpoints expose generic errors, emit allowlisted structured diagnostics, attach correlation IDs, and provide local-process session revocation plus browser logout. Resource authorization remains a later server-side OpenFGA/application decision.
+- P05 evidence: focused auth tests, full `make verify`, full `make verify-release`, Keycloak bootstrap, OIDC discovery, and `make platform-status` passed. TestClient emitted non-failing upstream deprecation warnings.
+- P05 residual risks: in-process revocation is not a multi-process session store, and already-issued tokens can outlive a Keycloak user disable until provider status/back-channel enforcement exists. Both are documented in `docs/02-security/AUTHENTICATION_MODEL.md` and the risk register.
+
 ## Next authorized work
 
-No future phase is authorized by this record. Await an explicit P05 prompt.
+No future phase is authorized by this record. Await an explicit P06 prompt.

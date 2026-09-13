@@ -1,0 +1,120 @@
+{
+  "realm": "knowledge-local",
+  "enabled": true,
+  "displayName": "Northstar Local Knowledge",
+  "accessTokenLifespan": 300,
+  "ssoSessionIdleTimeout": 1800,
+  "groups": [
+    {"name": "sales-customer-success"},
+    {"name": "product"},
+    {"name": "engineering"},
+    {"name": "support-engineering"},
+    {"name": "legal"},
+    {"name": "finance"}
+  ],
+  "clients": [
+    {
+      "clientId": "knowledge-web-local",
+      "name": "Knowledge Web Local",
+      "enabled": true,
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:5173/auth/callback"],
+      "webOrigins": ["http://localhost:5173"],
+      "attributes": {"pkce.code.challenge.method": "S256"},
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "config": {
+            "full.path": "false",
+            "claim.name": "groups",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "tenant-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "tenant_id",
+            "claim.name": "tenant_id",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        },
+        {
+          "name": "api-audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "config": {
+            "included.client.audience": "knowledge-api-local",
+            "id.token.claim": "false",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice.account-manager",
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "Account",
+      "email": "alice.account-manager@northstar.example",
+      "emailVerified": true,
+      "attributes": {"tenant_id": ["northstar"]},
+      "groups": ["/sales-customer-success"]
+    },
+    {
+      "username": "priya.product-manager",
+      "enabled": true,
+      "firstName": "Priya",
+      "lastName": "Product",
+      "email": "priya.product-manager@northstar.example",
+      "emailVerified": true,
+      "attributes": {"tenant_id": ["northstar"]},
+      "groups": ["/product"]
+    },
+    {
+      "username": "miguel.support-engineer",
+      "enabled": true,
+      "firstName": "Miguel",
+      "lastName": "Support",
+      "email": "miguel.support-engineer@northstar.example",
+      "emailVerified": true,
+      "attributes": {"tenant_id": ["northstar"]},
+      "groups": ["/engineering", "/support-engineering"]
+    },
+    {
+      "username": "leah.legal-counsel",
+      "enabled": true,
+      "firstName": "Leah",
+      "lastName": "Legal",
+      "email": "leah.legal-counsel@northstar.example",
+      "emailVerified": true,
+      "attributes": {"tenant_id": ["northstar"]},
+      "groups": ["/legal"]
+    },
+    {
+      "username": "dani.finance",
+      "enabled": true,
+      "firstName": "Dani",
+      "lastName": "Finance",
+      "email": "dani.finance@northstar.example",
+      "emailVerified": true,
+      "attributes": {"tenant_id": ["northstar"]},
+      "groups": ["/finance"]
+    }
+  ]
+}

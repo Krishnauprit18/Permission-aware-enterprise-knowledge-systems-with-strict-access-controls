@@ -64,3 +64,13 @@
 - Static/container: `make container-lint` PASS with Compose validation and Docker BuildKit checks; `make shellcheck` PASS using a pinned local fallback; `make container-scan` PASS using pinned Trivy `0.56.2` with embedded checks.
 - Full gate: `make verify`, `make scan`, `make sbom`, and `make verify-release` PASS. `make -n reset-demo` confirms destructive volume reset plus deterministic re-bootstrap; live reset was not run because it deletes named volumes and no explicit deletion approval was provided.
 - Known gap: MinIO runs as root in the pinned image configuration due entrypoint/named-volume behavior; this is documented for future hardening.
+
+## P05
+
+- Scope: local Keycloak/OIDC identity and authentication only. No retrieval, indexing, authorization tuple, or answer-generation workflow was implemented.
+- Focused backend evidence: `uv run --directory backend pytest tests/unit/test_authentication.py -q --no-cov` passed 10 tests; `uv run --directory backend pytest tests/integration/test_auth_api.py -q --no-cov` passed 3 tests.
+- Frontend evidence: `npm test -- --run` passed 13 tests with Vitest source coverage at 98.87% overall and 100% branch/function/line coverage for the configured application source. Access-token storage remains memory-only in tested flows.
+- Fast gate: `make verify` passed, including Ruff format/check, strict mypy, strict TypeScript, ESLint, Prettier, Markdown lint, unit/integration/security tests, Bandit, Semgrep, and coverage thresholds.
+- Release gate: `make verify-release` passed, including dependency audit, npm audit, detect-secrets, SBOM generation, pinned ShellCheck fallback, container lint, and Trivy configuration scans.
+- Live evidence: `make up`, Keycloak demo bootstrap, private-network OIDC discovery validation, and `make platform-status` passed. No generated credentials were printed or tracked.
+- Known non-failing warnings: Starlette TestClient and AnyIO emitted upstream deprecation warnings; they do not fail the gate and should be revisited when the test client dependency is refreshed.

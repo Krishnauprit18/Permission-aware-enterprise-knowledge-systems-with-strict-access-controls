@@ -57,6 +57,7 @@ services:
     restart: unless-stopped
     command:
       - start-dev
+      - --import-realm
       - --http-port=8080
       - --http-management-port=9000
       - --hostname-strict=false
@@ -77,6 +78,7 @@ services:
       - "127.0.0.1:9100:9000"
     volumes:
       - keycloak_data:/opt/keycloak/data
+      - ./platform/keycloak:/opt/keycloak/data/import:ro
     healthcheck:
       test:
         - CMD-SHELL

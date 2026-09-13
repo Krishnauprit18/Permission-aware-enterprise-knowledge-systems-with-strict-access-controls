@@ -1,6 +1,7 @@
 """Small, framework-independent contracts used to protect authorization flow."""
 
-from dataclasses import dataclass
+from collections.abc import Mapping
+from dataclasses import dataclass, field
 from typing import NewType
 
 AuthorizedObjectId = NewType("AuthorizedObjectId", str)
@@ -10,10 +11,19 @@ EvidenceId = NewType("EvidenceId", str)
 
 @dataclass(frozen=True, slots=True)
 class PrincipalContext:
-    """Authenticated identity metadata; authorization remains an external decision."""
+    """Validated identity metadata; authorization remains an external decision."""
 
-    principal_id: PrincipalId
+    subject_id: PrincipalId
     tenant_id: str
+    groups: tuple[str, ...] = ()
+    claims: Mapping[str, object] = field(default_factory=dict)
+    correlation_id: str = ""
+
+    @property
+    def principal_id(self) -> PrincipalId:
+        """Compatibility alias for the subject identifier."""
+
+        return self.subject_id
 
 
 @dataclass(frozen=True, slots=True)
