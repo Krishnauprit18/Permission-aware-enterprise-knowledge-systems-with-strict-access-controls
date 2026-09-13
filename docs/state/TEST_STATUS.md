@@ -147,3 +147,11 @@
 - Operator evidence: `PLATFORM_ENV_FILE=.../.env.local OPENSEARCH_URL=https://172.18.0.2:9200 EMBEDDING_MODEL_PATH=/tmp/p11-fastembed-cache EMBEDDING_MODEL_NAME=BAAI/bge-small-en-v1.5 EMBEDDING_MODEL_VERSION=2026-09 INDEX_GENERATION=11 ./scripts/reindex-demo.sh` passed and indexed 11 synthetic chunks into `knowledge-chunks-v1-000011`.
 - Prompt integrity evidence: `scripts/verify-prompt-integrity.sh` passed 13 archived prompt hashes, including repaired P01 and P02 entries. The target is part of `make verify`.
 - Environment note: `make up` reached healthy local OpenSearch but stopped at a pre-existing PostgreSQL migration checksum drift before completion. No destructive reset was performed. This does not affect the direct OpenSearch evidence above and is tracked in the risk register.
+
+## P12
+
+- Focused retrieval evidence: `UV_CACHE_DIR=/tmp/p12-uv-cache make verify` passed. The gate ran Ruff format/check, strict mypy, frontend Prettier/ESLint/TypeScript, Markdown lint, prompt-integrity validation, dataset validation, 93 selected backend unit tests with 91.59% measured domain coverage, 13 frontend tests with 98.87% configured coverage, 4 integration tests with 8 skips, and 49 security tests with 5 skips.
+- Retrieval regressions cover three principals with different authorized candidate sets, tenant/account decoys, Legal-only content, current role revocation without re-embedding, authorization failure/timeout fail-closed behavior, hostile client filters, deterministic RRF, metadata-only candidate envelopes, and zero unauthorized context rate on the fixture path.
+- Prompt-integrity evidence: `scripts/verify-prompt-integrity.sh` passed all 14 archived phase prompt hashes, including the repaired P01/P02 entries and the new P12 archive.
+- Live P12 OpenSearch evidence is pending environment access: the opt-in live filtered BM25/vector candidate test was skipped because Docker access was denied and the previously configured private OpenSearch endpoint was unreachable. Unit/fake-transport coverage passed; no live OpenSearch claim is made for P12.
+- Tooling note: the default Semgrep gate now uses the checked-in offline security ruleset and temporary local settings/cache, so the fast gate is deterministic without hosted presets or writable home-directory assumptions.

@@ -3,10 +3,10 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P11`
+- Current phase: `P12`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, and P11 provides local embedding and disposable OpenSearch indexing; permission-first retrieval, reranking, evidence resolution, and generation remain unimplemented.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, and P12 provides permission-first hybrid retrieval through authorized metadata-only candidates; reranking, evidence resolution, and generation remain unimplemented.
 - Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`.
 
 ## Established invariants
@@ -170,4 +170,14 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - Prompt integrity evidence: `scripts/verify-prompt-integrity.sh` passed all 13 archived phase prompts after repairing the P01/P02 ledger hashes; `make verify` now runs this gate.
 - P11 limits: semantic quality and retrieval evaluation remain later work; the FastEmbed adapter is local and real but does not constitute a quality benchmark. P11 does not implement user query retrieval, permission scope resolution, reranking, evidence resolution, or generation.
 
-Next authorized phase: P12, only after an explicit P12 prompt.
+## P12 permission-first retrieval baseline
+
+- `knowledge_system.application.retrieval.PermissionFirstRetrievalService` resolves the current OpenFGA-backed `can_view` scope before query embedding or either search branch. An empty or failed scope never becomes an unfiltered query.
+- `AuthorizationFilter` and `EffectiveSearchFilter` are immutable typed values. Tenant and trusted resource constraints are mandatory; client-facing constraints are bounded account, department, and UTC update-time narrowers with no raw OpenSearch DSL.
+- OpenSearch BM25 and vector candidate methods use the same filter and request an allowlisted metadata-only `_source`; text and vectors are excluded. Index metadata remains defense-in-depth, not authorization truth.
+- RRF is deterministic and configurable. Every fused resource is fine-checked with current authorization before a `RetrievalCandidate` is constructed. Returned candidates carry provenance and an authorization decision/fingerprint but no text-bearing field.
+- `RetrievalResult.evaluation_record()` exposes ranked IDs, component diagnostics, authorization fingerprint, and the explicit unauthorized-context rate for later retrieval-only evaluation.
+- P12 evidence: `make verify` passed with 93 backend unit tests at 91.59% domain coverage, 13 frontend tests at 98.87%, 4 integration tests passed with 8 skips, and 49 security tests passed with 5 skips. The new live OpenSearch filter test was not run because Docker access/private endpoint was unavailable in this session.
+- P12 implementation commits: `a927cb9` (`feat(P12): implement permission-first hybrid retrieval`) and `fb10e3d` (`fix(P12): stabilize local verification gates`) are pushed to `origin/master`.
+
+Next authorized phase: P13 only after an explicit P13 prompt.
