@@ -74,6 +74,18 @@ ASVS 5.0.0 is the detailed application verification reference. The future implem
 | Error/log hygiene | Missing and invalid credentials use the same generic 401 response; correlation IDs are fresh server values; allowlisted logs exclude bearer, cookie, claim, and password values. |
 | Cookie/CSRF posture | Current bearer transport uses no auth cookie. A future cookie/BFF route is blocked until SameSite/HttpOnly/Secure, CSRF, origin, rotation, and invalidation tests exist. |
 
+### P06 authorization verification
+
+| Authorization property | Project verification |
+|---|---|
+| Relationship source | `OpenFGAAdapter` uses OpenFGA `check` and `list-objects`; clients, search metadata, model output, and identity group claims cannot grant access. |
+| Tenant isolation | Server-owned resource metadata and a separate current tenant-membership check deny unknown or cross-tenant resources before an allow is returned. |
+| Fine-grained inheritance | Model v1 covers account roles, departments, groups, projects, direct viewers/owners, and explicit restricted viewers; restricted resources use the explicit path. |
+| View/share separation | `can_view` and `can_share_externally` are independent relations, with trusted classification gating external sharing. |
+| Failure closed | OpenFGA transport/status/schema failures return `INDETERMINATE`/deny for checks and raise `AuthorizationUnavailable` for protected scope construction. |
+| Revocation and cache versioning | Each request consults current relationship truth; decision and scope fingerprints bind principal, tenant, relation, object/scope, outcome, model, tuple, and policy versions. |
+| Safe audit | Decision audit metadata contains action, outcome, reason, versions, correlation ID, duration, and fingerprint without raw graph details or content. |
+
 ## OWASP Top 10:2025 mapping
 
 | OWASP category | Planned verification |

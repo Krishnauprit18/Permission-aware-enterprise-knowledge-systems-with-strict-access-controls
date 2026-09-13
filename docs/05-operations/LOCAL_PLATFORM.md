@@ -2,7 +2,11 @@
 
 ## Scope
 
-P04 supplies local infrastructure only. It does not create product tables, users, authorization tuples, connectors, indexes, models, or demo content. The Compose project is `permission-aware-knowledge` and all services use the private `platform` network.
+P04 supplies local infrastructure and P06 adds only the OpenFGA authorization
+model, synthetic relationship tuples, and bootstrap operation. No product
+tables, connectors, indexes, models, or source demo content are created yet.
+The Compose project is `permission-aware-knowledge` and all services use the
+private `platform` network.
 
 ## Prerequisites
 
@@ -18,9 +22,10 @@ P04 supplies local infrastructure only. It does not create product tables, users
 make platform-config
 make up
 make platform-status
+make openfga-bootstrap
 ```
 
-`platform-config` creates `.env.local` with mode `0600` and validates the rendered Compose model. `up` waits for long-running service health checks, waits for the OpenFGA migration to complete, runs the MinIO bucket initializer, and bootstraps the imported Keycloak demo users with generated local passwords. No blind sleep is used. `platform-status` prints Compose status and runs endpoint smoke checks.
+`platform-config` creates `.env.local` with mode `0600` and validates the rendered Compose model. `up` waits for long-running service health checks, waits for the OpenFGA migration to complete, runs the MinIO bucket initializer, bootstraps the imported Keycloak demo users with generated local passwords, and creates or updates the deterministic OpenFGA model and tuples. No blind sleep is used. `platform-status` prints Compose status and runs endpoint smoke checks.
 
 The smoke script first probes loopback ports. If the active Docker context does not forward published ports to the shell, it uses the pinned curl utility image on the private Compose network. This fallback is for verification only; it does not change the default host bindings.
 
@@ -52,6 +57,8 @@ The Compose file binds every host port to loopback. The platform network is mark
 - The current OpenSearch image uses its local demo certificate. This is acceptable only for the loopback development boundary. Production-like configuration requires operator-managed certificates, secret injection, a non-demo security configuration, and authenticated service-to-service transport.
 - Keycloak uses `start-dev`; OpenFGA uses plaintext HTTP and disabled authentication. These are explicit local-development settings, not security claims.
 - Keycloak imports `platform/keycloak/knowledge-local-realm.json`. The realm has a public PKCE browser client, synthetic Northstar users, group claims, and a tenant claim. It contains no password credentials. Run `make keycloak-bootstrap` after the platform is healthy to idempotently assign generated passwords.
+- OpenFGA imports no model automatically from Compose. `scripts/bootstrap-openfga.sh` creates or finds the local store, creates the pinned schema 1.1 model when absent, persists non-secret store/model IDs in `.env.local`, and writes only missing tuples from `platform/openfga/seed-tuples.json`. Run `make openfga-bootstrap` after the platform is healthy to repeat the idempotent operation.
+- The OpenFGA model is relationship truth, not a client-facing ACL API. The backend additionally validates the trusted resource metadata catalog, tenant membership, classification, and restricted-resource path before returning an allow.
 
 ## Persistence and reset
 
@@ -65,7 +72,12 @@ Named volumes are created by Compose:
 | `permission-aware-knowledge_minio_data` | MinIO objects, including `raw` |
 | `permission-aware-knowledge_prometheus_data` | Prometheus time-series data |
 
-`make down` removes containers and the private network but preserves named volumes. `make reset-demo` removes this project’s containers, network, and named volumes, then recreates the empty platform and `raw` bucket. It does not remove `.env.local`, Docker images, or files outside the project. There is no product demo seed in P04.
+OpenFGA model and tuple state is stored in PostgreSQL's `openfga` database. The
+store and authorization-model identifiers in `.env.local` are local operational
+state, not credentials. `make reset-demo` deletes the database/volumes and the
+next startup creates a fresh store/model and updates these identifiers.
+
+`make down` removes containers and the private network but preserves named volumes. `make reset-demo` removes this project’s containers, network, and named volumes, then recreates the empty platform, `raw` bucket, and deterministic OpenFGA relationship state. It does not remove `.env.local`, Docker images, or files outside the project. There is no product source/demo seed yet.
 
 ## Backup and restore
 

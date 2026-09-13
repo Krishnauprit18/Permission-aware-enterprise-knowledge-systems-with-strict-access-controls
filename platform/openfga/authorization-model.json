@@ -1,0 +1,106 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    {"type": "user"},
+    {
+      "type": "group",
+      "relations": {"member": {"this": {}}},
+      "metadata": {"relations": {"member": {"directly_related_user_types": [{"type": "user"}]}}}
+    },
+    {
+      "type": "tenant",
+      "relations": {"member": {"this": {}}},
+      "metadata": {"relations": {"member": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]}}}
+    },
+    {
+      "type": "department",
+      "relations": {
+        "tenant": {"this": {}},
+        "member": {"this": {}},
+        "lead": {"this": {}},
+        "can_view": {"union": {"child": [{"computedUserset": {"relation": "member"}}, {"computedUserset": {"relation": "lead"}}]}}
+      },
+      "metadata": {"relations": {
+        "tenant": {"directly_related_user_types": [{"type": "tenant"}]},
+        "member": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "lead": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]}
+      }}
+    },
+    {
+      "type": "account",
+      "relations": {
+        "tenant": {"this": {}},
+        "member": {"this": {}},
+        "manager": {"this": {}},
+        "supporter": {"this": {}},
+        "product_viewer": {"this": {}},
+        "legal_viewer": {"this": {}},
+        "finance_viewer": {"this": {}},
+        "can_view": {"union": {"child": [
+          {"computedUserset": {"relation": "member"}},
+          {"computedUserset": {"relation": "manager"}},
+          {"computedUserset": {"relation": "supporter"}},
+          {"computedUserset": {"relation": "product_viewer"}},
+          {"computedUserset": {"relation": "legal_viewer"}},
+          {"computedUserset": {"relation": "finance_viewer"}}
+        ]}}
+      },
+      "metadata": {"relations": {
+        "tenant": {"directly_related_user_types": [{"type": "tenant"}]},
+        "member": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "manager": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "supporter": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "product_viewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "legal_viewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "finance_viewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]}
+      }}
+    },
+    {
+      "type": "project",
+      "relations": {
+        "account": {"this": {}},
+        "viewer": {"this": {}},
+        "can_view": {"union": {"child": [{"computedUserset": {"relation": "viewer"}}, {"tupleToUserset": {"tupleset": {"relation": "account"}, "computedUserset": {"relation": "can_view"}}}]}}
+      },
+      "metadata": {"relations": {
+        "account": {"directly_related_user_types": [{"type": "account"}]},
+        "viewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]}
+      }}
+    },
+    {
+      "type": "resource",
+      "relations": {
+        "tenant": {"this": {}},
+        "account": {"this": {}},
+        "department": {"this": {}},
+        "project": {"this": {}},
+        "viewer": {"this": {}},
+        "owner": {"this": {}},
+        "restricted_viewer": {"this": {}},
+        "share_reviewer": {"this": {}},
+        "can_view": {"union": {"child": [
+          {"computedUserset": {"relation": "viewer"}},
+          {"computedUserset": {"relation": "owner"}},
+          {"computedUserset": {"relation": "restricted_viewer"}},
+          {"tupleToUserset": {"tupleset": {"relation": "account"}, "computedUserset": {"relation": "can_view"}}},
+          {"tupleToUserset": {"tupleset": {"relation": "department"}, "computedUserset": {"relation": "can_view"}}},
+          {"tupleToUserset": {"tupleset": {"relation": "project"}, "computedUserset": {"relation": "can_view"}}}
+        ]}},
+        "can_share_externally": {"intersection": {"child": [
+          {"computedUserset": {"relation": "share_reviewer"}},
+          {"computedUserset": {"relation": "can_view"}}
+        ]}}
+      },
+      "metadata": {"relations": {
+        "tenant": {"directly_related_user_types": [{"type": "tenant"}]},
+        "account": {"directly_related_user_types": [{"type": "account"}]},
+        "department": {"directly_related_user_types": [{"type": "department"}]},
+        "project": {"directly_related_user_types": [{"type": "project"}]},
+        "viewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "owner": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "restricted_viewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]},
+        "share_reviewer": {"directly_related_user_types": [{"type": "user"}, {"type": "group", "relation": "member"}]}
+      }}
+    }
+  ]
+}

@@ -1,0 +1,1 @@
+"""OpenFGA-backed authorization adapters."""

@@ -3,11 +3,11 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P04`
+- Current phase: `P06`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: not started; P00-P02 establish documentation/contracts/architecture and P03 establishes only the typed repository scaffold and quality gates
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`.
+- Product implementation: P05 provides local identity/authentication and P06 provides the first-class OpenFGA authorization boundary; ingestion, retrieval, indexing, reranking, generation, and product persistence remain unimplemented.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`; P06 implementation checkpoint pending.
 
 ## Established invariants
 
@@ -75,6 +75,17 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - P05 residual risks: in-process revocation is not a multi-process session store, and already-issued tokens can outlive a Keycloak user disable until provider status/back-channel enforcement exists. Both are documented in `docs/02-security/AUTHENTICATION_MODEL.md` and the risk register.
 - P05 checkpoint commit: `03be6c1` (`feat(P05): implement identity and authentication`) is pushed to `origin/master`.
 
+## P06 authorization baseline
+
+- OpenFGA schema 1.1 model v1 covers tenant, tenant-scoped groups, departments, accounts, projects, resources, direct viewer/owner, restricted viewer, and separate share reviewer relationships.
+- `OpenFGAAdapter` is the backend policy enforcement point. It checks server-owned resource metadata and tenant membership before current high-consistency OpenFGA relationship checks; client filters, identity group claims, search metadata, and LLM behavior cannot grant access.
+- `can_view` and `can_share_externally` remain separate. Trusted classification metadata gates external sharing, and trusted restricted metadata selects the explicit `restricted_viewer` path instead of inherited access.
+- Permission-first listing returns metadata-only IDs and a versioned scope. Unknown/cross-tenant objects are discarded; authorizer transport, timeout, status, and malformed-response failures return deny/indeterminate or raise `AuthorizationUnavailable`.
+- Decisions carry `authorization_model_id`, `tuple_version`, `policy_version`, reason code, correlation ID, duration audit fields, and a SHA-256 fingerprint for future cache binding. The fingerprint contains no relationship graph details.
+- Deterministic local model and tuple state is bootstrapped by `make openfga-bootstrap` and wired into `make up`/`reset-demo`; OpenFGA state is stored in the local PostgreSQL database.
+- P06 permission matrix fixture: `docs/04-evals/permission_matrix.json`.
+- P06 evidence: `make verify`, `make verify-release`, `make shellcheck`, integrated `make up`, `make platform-status`, two idempotent `make openfga-bootstrap` runs, and live relationship probes passed. P06 implementation checkpoint commit is pending.
+
 ## Next authorized work
 
-No future phase is authorized by this record. Await an explicit P06 prompt.
+No future phase is authorized by this record. Await an explicit P07 prompt.

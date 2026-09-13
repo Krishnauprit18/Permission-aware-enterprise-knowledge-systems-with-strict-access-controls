@@ -133,3 +133,40 @@ Audit events include decision/action, principal/tenant, object IDs where safe,
 policy model/version, reason code, correlation ID, and duration. They exclude
 raw chunk text, token contents, complete prompts, and denied resource details in
 user-visible output.
+
+## 9. P06 OpenFGA implementation baseline
+
+P06 implements the reserved model as `authorization-model-v1` with these object
+types: `user`, tenant, group, department, account, project, and resource. Group
+membership is represented as `group:<tenant>-<name>#member`; tenant membership,
+department membership, account roles, project inheritance, direct viewer/owner
+grants, restricted viewers, and share reviewers are relationship tuples. The
+resource relation `can_view` combines direct, owner, account, department, and
+project paths. A resource marked restricted by trusted metadata is checked only
+through its explicit `restricted_viewer` path. `can_share_externally` is a
+separate OpenFGA relation and is additionally bounded by trusted
+`PUBLIC`/`CUSTOMER_SHAREABLE` metadata.
+
+`OpenFGAAdapter` is the application-facing policy enforcement point. For an
+object check it first validates that the object exists in the server-owned
+metadata store, matches the principal tenant, and satisfies local
+classification policy; it then checks current tenant membership and the
+relationship in OpenFGA with `HIGHER_CONSISTENCY`. The principal's OIDC group
+claims are identity context only and are never converted into authorization by
+the client or adapter. The adapter also verifies the OpenFGA `tenant` relation
+from the resource to the principal's tenant, preventing a relationship graph
+mistake from relying on the metadata catalog alone.
+
+Permission-first listing calls OpenFGA `list-objects` for metadata-only resource
+IDs, discards unknown or cross-tenant IDs, and rechecks restricted resources
+before returning the scope. An empty scope is a valid deny result. An OpenFGA
+transport, response, or timeout failure raises `AuthorizationUnavailable` for
+scope construction or returns `INDETERMINATE`/deny for an object check; neither
+path can produce an allow.
+
+P06 uses `authorization-model-v1`, `tuples-v1`, and `policy-v1`. Each decision
+also carries a SHA-256 decision fingerprint over the principal, tenant,
+relation, object, outcome, and these versions. The fingerprint contains no
+relationship graph details and is intended to bind future cache entries. Tuple
+updates must advance the tuple version or emit an equivalent invalidation event
+before any authorization cache is introduced.

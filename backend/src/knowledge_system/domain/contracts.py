@@ -2,11 +2,21 @@
 
 from collections.abc import Mapping
 from dataclasses import dataclass, field
-from typing import NewType
+from enum import StrEnum
+from typing import Literal, NewType
 
 AuthorizedObjectId = NewType("AuthorizedObjectId", str)
 PrincipalId = NewType("PrincipalId", str)
 EvidenceId = NewType("EvidenceId", str)
+AuthorizationRelation = Literal["can_view", "can_share_externally"]
+
+
+class AuthorizationOutcome(StrEnum):
+    """Auditable outcomes; only ALLOW can cross a protected boundary."""
+
+    ALLOW = "ALLOW"
+    DENY = "DENY"
+    INDETERMINATE = "INDETERMINATE"
 
 
 @dataclass(frozen=True, slots=True)
@@ -52,7 +62,26 @@ class AuthorizationDecision:
 
     allowed: bool
     can_share_externally: bool = False
+    outcome: AuthorizationOutcome | None = None
+    reason_code: str = "unspecified"
+    authorization_model_id: str = "unknown"
+    tuple_version: str = "unknown"
+    policy_version: str = "policy-v1"
+    decision_fingerprint: str = ""
+    correlation_id: str = ""
 
     def __post_init__(self) -> None:
         if self.can_share_externally and not self.allowed:
             raise ValueError("external sharing requires view authorization")
+        if self.outcome is None:
+            object.__setattr__(
+                self,
+                "outcome",
+                AuthorizationOutcome.ALLOW
+                if self.allowed
+                else AuthorizationOutcome.DENY,
+            )
+        if self.allowed and self.outcome is not AuthorizationOutcome.ALLOW:
+            raise ValueError("allowed decisions must have ALLOW outcome")
+        if not self.allowed and self.outcome is AuthorizationOutcome.ALLOW:
+            raise ValueError("denied decisions cannot have ALLOW outcome")

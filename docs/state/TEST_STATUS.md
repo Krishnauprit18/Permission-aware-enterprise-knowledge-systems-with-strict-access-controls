@@ -74,3 +74,13 @@
 - Release gate: `make verify-release` passed, including dependency audit, npm audit, detect-secrets, SBOM generation, pinned ShellCheck fallback, container lint, and Trivy configuration scans.
 - Live evidence: `make up`, Keycloak demo bootstrap, private-network OIDC discovery validation, and `make platform-status` passed. No generated credentials were printed or tracked.
 - Known non-failing warnings: Starlette TestClient and AnyIO emitted upstream deprecation warnings; they do not fail the gate and should be revisited when the test client dependency is refreshed.
+
+## P06
+
+- Scope: first-class OpenFGA authorization only. No retrieval, indexing, chunk text, model, or answer-generation workflow was implemented.
+- Focused evidence: `uv run --directory backend pytest tests/unit/test_authorization.py -q --no-cov` passed 13 tests. Coverage includes account inheritance, cross-account denial, group/department grant, explicit restricted access, direct grants, revocation on the next request, unknown resources, authorizer outage, tenant isolation, resource tenant binding, metadata-only listing, audit fingerprints, and separate external sharing.
+- Live evidence: `make openfga-bootstrap` passed twice, including the idempotent path. Read-only OpenFGA checks passed for account inheritance, cross-account denial, restricted/legal access, group/department inheritance, and tenant isolation.
+- Full fast gate: `make verify` passed with 25 unit-selected tests, 4 integration tests, 28 security-selected tests, strict mypy/TypeScript, Ruff, ESLint, Prettier, Markdown lint, Bandit, and Semgrep. Backend domain coverage was 91.94%, above the 90% threshold; frontend configured source coverage was 98.87%.
+- Full release gate: `make verify-release` passed with dependency audit, npm audit, detect-secrets, SBOM generation, pinned ShellCheck fallback, Dockerfile/Compose lint, and Trivy configuration scans. No known shipped dependency vulnerabilities were reported.
+- Platform evidence: integrated `make up` passed health-gated startup, MinIO initialization, Keycloak bootstrap, and OpenFGA model/tuple bootstrap; `make platform-status` passed all service probes. `make openfga-bootstrap` passed twice, including the idempotent path. Live checks passed for account inheritance, cross-account denial, restricted/legal access, group/department inheritance, and tenant isolation.
+- Known non-failing warnings: Starlette TestClient and AnyIO emitted upstream deprecation warnings in existing API tests; revisit when the test-client dependency is refreshed.

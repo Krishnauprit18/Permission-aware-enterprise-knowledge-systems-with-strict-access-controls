@@ -4,8 +4,8 @@ from collections.abc import Iterable, Sequence
 from datetime import datetime
 from typing import Protocol
 
+from knowledge_system.application.ports.authorization import AuthorizationPort
 from knowledge_system.domain.contracts import (
-    AuthorizationDecision,
     AuthorizedChunk,
     AuthorizedObjectId,
     CandidateEnvelope,
@@ -48,12 +48,7 @@ class SearchBackend(Protocol):
     ) -> AuthorizedChunk: ...
 
 
-class AuthorizationService(Protocol):
-    """Evaluates current relationships; implementations must fail closed."""
-
-    def check_view(
-        self, principal: PrincipalContext, object_id: AuthorizedObjectId
-    ) -> AuthorizationDecision: ...
+AuthorizationService = AuthorizationPort
 
 
 class Reranker(Protocol):

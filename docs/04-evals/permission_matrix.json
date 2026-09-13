@@ -1,0 +1,28 @@
+{
+  "version": "permission-matrix-v1",
+  "tenant": "northstar",
+  "principals": [
+    {"id": "alice-account-manager", "tenant_id": "northstar", "groups": ["sales-customer-success"]},
+    {"id": "priya-product-manager", "tenant_id": "northstar", "groups": ["product"]},
+    {"id": "miguel-support-engineer", "tenant_id": "northstar", "groups": ["engineering", "support-engineering"]},
+    {"id": "leah-legal-counsel", "tenant_id": "northstar", "groups": ["legal"]},
+    {"id": "dani-finance", "tenant_id": "northstar", "groups": ["finance"]},
+    {"id": "harbor-user", "tenant_id": "harbor-labs", "groups": ["sales-customer-success"]}
+  ],
+  "resources": [
+    {"id": "resource:acme-roadmap", "tenant_id": "northstar", "classification": "INTERNAL", "kind": "account"},
+    {"id": "resource:beacon-ticket", "tenant_id": "northstar", "classification": "CUSTOMER_SHAREABLE", "kind": "account"},
+    {"id": "resource:cedar-runbook", "tenant_id": "northstar", "classification": "INTERNAL", "kind": "department"},
+    {"id": "resource:legal-matter", "tenant_id": "northstar", "classification": "RESTRICTED", "kind": "restricted"},
+    {"id": "resource:harbor-contract", "tenant_id": "harbor-labs", "classification": "CONFIDENTIAL", "kind": "account"}
+  ],
+  "cases": [
+    {"id": "same-user-allowed-account", "principal": "alice-account-manager", "relation": "can_view", "object": "resource:acme-roadmap", "expected": "ALLOW"},
+    {"id": "cross-account-denial", "principal": "alice-account-manager", "relation": "can_view", "object": "resource:beacon-ticket", "expected": "DENY"},
+    {"id": "restricted-department-denial", "principal": "priya-product-manager", "relation": "can_view", "object": "resource:legal-matter", "expected": "DENY"},
+    {"id": "direct-grant", "principal": "leah-legal-counsel", "relation": "can_view", "object": "resource:legal-matter", "expected": "ALLOW"},
+    {"id": "group-grant", "principal": "miguel-support-engineer", "relation": "can_view", "object": "resource:cedar-runbook", "expected": "ALLOW"},
+    {"id": "tenant-isolation", "principal": "harbor-user", "relation": "can_view", "object": "resource:acme-roadmap", "expected": "DENY"},
+    {"id": "separate-share-decision", "principal": "alice-account-manager", "relation": "can_share_externally", "object": "resource:acme-roadmap", "expected": "DENY"}
+  ]
+}
