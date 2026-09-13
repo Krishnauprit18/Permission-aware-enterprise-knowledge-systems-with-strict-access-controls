@@ -8,7 +8,7 @@ An authenticated enterprise user asks a question over fragmented internal data. 
 
 ## Security invariants
 
-- An unauthorized chunk must not reach any LLM prompt, embedding request, reranker input, citation builder, or answer-generation context.
+- An unauthorized chunk must not reach any user-query reranker input, evidence resolver, citation builder, LLM prompt, answer-generation context, export, or answer cache. Ingestion-time embeddings may be created from canonical source revisions only after source ACL and classification validation; they are sensitive derivatives and never authorization proof.
 - Authorization is explicit, deterministic, deny-by-default, and evaluated for the authenticated principal and current permission state.
 - `can_view` is distinct from `can_share_externally`; a user may view evidence without being allowed to share its contents.
 - Revocation and deletion must affect retrieval behavior dynamically within a defined, tested bound.

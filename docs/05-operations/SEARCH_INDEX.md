@@ -6,14 +6,16 @@ Start the private platform and ensure `.env.local` exists, then run:
 
 ```text
 make up
+make platform-status
+uv sync --directory backend --extra semantic
 make reindex-demo
 ```
 
 The command creates `knowledge-chunks-v1-000001` by default and moves
 `knowledge-chunks-active` after successful bulk indexing. Use
-`INDEX_GENERATION=N` for a new immutable generation. The local baseline
-embedder is deterministic and offline; no source content is sent to a cloud
-service.
+`INDEX_GENERATION=N` for a new immutable generation. Set
+`EMBEDDING_MODEL_PATH` to an already installed local FastEmbed model cache. No
+source content is sent to a cloud service.
 
 The command is an indexing operation, not a query demo. There is no browser
 route to OpenSearch, and the index does not authorize access. Current OpenFGA
@@ -28,9 +30,10 @@ environment:
 |---|---|---|
 | `OPENSEARCH_URL` | `https://127.0.0.1:9200` | Loopback/private endpoint only |
 | `OPENSEARCH_USERNAME` | `admin` | Local service identity |
-| `EMBEDDING_MODEL_NAME` | `local-hash-embedding` | Configured local adapter name |
+| `EMBEDDING_MODEL_NAME` | `all-MiniLM-L6-v2` | Configured local adapter name |
 | `EMBEDDING_MODEL_VERSION` | `1` | Immutable adapter/model version |
 | `EMBEDDING_DIMENSION` | `384` | Vector dimension and mapping contract |
+| `EMBEDDING_MODEL_PATH` | required for reindex | Existing local FastEmbed model cache directory |
 | `EMBEDDING_BATCH_SIZE` | `16` | Bounded batch size |
 | `INDEX_GENERATION` | `1` | Immutable physical index generation |
 
@@ -46,6 +49,9 @@ or committed. Do not put model artifacts, source text, or vectors in logs.
   response bodies are not logged or returned.
 - A failed generation can be discarded and rebuilt. The previous alias remains
   the last verified generation until cutover.
+- Every generation enables `index.knn=true`; live verification must cover both
+  the BM25 and approximate-nearest-neighbor query paths before the generation
+  is treated as verified.
 - Deletion jobs must call the index deletion boundary and reconcile all active
   generations before completion. Removing a PostgreSQL row alone does not
   remove a searchable derivative.

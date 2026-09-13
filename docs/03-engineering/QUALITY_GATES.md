@@ -44,6 +44,7 @@ Run `make bootstrap` once on a new checkout. It installs Python 3.12 through uv,
 | `make fmt` | Fast | Check Ruff and Prettier formatting. |
 | `make lint` | Fast | Run Ruff and ESLint. |
 | `make lint-docs` | Fast | Run the lockfile-managed Markdown linter. |
+| `make prompt-integrity` | Fast | Verify every archived phase prompt hash matches the prompt ledger. |
 | `make typecheck` | Fast | Run strict mypy and TypeScript checks. |
 | `make test-unit` | Fast | Run backend and frontend unit tests with coverage thresholds. |
 | `make test-integration` | Fast | Run local package-boundary tests; no infrastructure is required in P03. |

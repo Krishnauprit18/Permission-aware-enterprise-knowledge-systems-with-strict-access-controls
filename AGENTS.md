@@ -4,7 +4,7 @@ This repository builds a local-only, permission-aware enterprise knowledge syste
 
 ## Non-negotiable invariants
 
-- Authorization is enforced before retrieval results can enter an LLM context. Post-generation filtering is never authorization.
+- Authorization is enforced before retrieved results can enter reranking, evidence resolution, citation construction, an LLM context, export, or answer caches. Post-generation filtering is never authorization. Ingestion-time local embeddings are derived-data work after trusted ACL/classification validation, not a user authorization grant.
 - Deny by default and fail closed on protected authorization paths. `can_view` and `can_share_externally` are separate decisions.
 - LLMs never make authorization or security-classification decisions. Retrieved content is untrusted input and may contain prompt injection.
 - Every answer is grounded in deterministic, validated, citable evidence; traces are auditable and logs are structured and redacted.

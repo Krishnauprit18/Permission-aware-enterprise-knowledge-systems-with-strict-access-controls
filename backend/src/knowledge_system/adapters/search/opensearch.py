@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import math
 import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -77,6 +78,7 @@ class HttpxOpenSearchTransport(OpenSearchTransport):
             auth=(config.username, config.password),
             timeout=config.timeout_seconds,
             verify=config.verify_tls,
+            trust_env=False,
             headers={"content-type": "application/json"},
         )
 
@@ -93,9 +95,15 @@ class HttpxOpenSearchTransport(OpenSearchTransport):
             response = self._client.request(
                 method, path, json=json_body, content=raw_body, headers=headers
             )
-            body: object = response.json() if response.content else {}
-        except (httpx.HTTPError, ValueError) as exc:
+        except httpx.HTTPError as exc:
             raise OpenSearchAdapterError("OpenSearch request failed") from exc
+        if response.content:
+            try:
+                body: object = response.json()
+            except ValueError:
+                body = {}
+        else:
+            body = {}
         if not isinstance(body, dict):
             body = {}
         return OpenSearchResponse(response.status_code, body)
@@ -110,7 +118,11 @@ class OpenSearchIndexAdapter:
 
     def create_generation(self, index_name: str, mapping: dict[str, object]) -> None:
         self._validate_index_name(index_name)
-        self._request("PUT", f"/{index_name}", json_body={"mappings": mapping})
+        self._request(
+            "PUT",
+            f"/{index_name}",
+            json_body={"settings": {"index.knn": True}, "mappings": mapping},
+        )
 
     def bulk_index(
         self, index_name: str, documents: Sequence[SearchIndexDocument]
@@ -130,7 +142,7 @@ class OpenSearchIndexAdapter:
             )
         response = self._request(
             "POST",
-            "/_bulk",
+            "/_bulk?refresh=wait_for",
             raw_body="\n".join(lines) + "\n",
             headers={"content-type": "application/x-ndjson"},
         )
@@ -140,37 +152,85 @@ class OpenSearchIndexAdapter:
     def activate_alias(self, index_name: str, alias: str) -> None:
         self._validate_index_name(index_name)
         self._validate_index_name(alias)
+        existing = self._transport.request("GET", f"/_alias/{alias}")
+        if existing.status_code not in {200, 404}:
+            raise OpenSearchAdapterError(
+                f"OpenSearch alias lookup failed with status {existing.status_code}"
+            )
+        actions: list[dict[str, object]] = []
+        if existing.status_code == 200:
+            for existing_index in existing.body:
+                self._validate_index_name(existing_index)
+                actions.append({"remove": {"alias": alias, "index": existing_index}})
+        actions.append(
+            {
+                "add": {
+                    "alias": alias,
+                    "index": index_name,
+                    "is_write_index": True,
+                }
+            }
+        )
         self._request(
             "POST",
             "/_aliases",
+            json_body={"actions": actions},
+        )
+
+    def search_bm25(
+        self, index_name: str, query: str, size: int = 10
+    ) -> OpenSearchResponse:
+        self._validate_index_name(index_name)
+        if not query.strip() or not 1 <= size <= 100:
+            raise ValueError("BM25 query and size are invalid")
+        return self._request(
+            "GET",
+            f"/{index_name}/_search",
+            json_body={"size": size, "query": {"match": {"text": query}}},
+        )
+
+    def search_knn(
+        self, index_name: str, vector: Sequence[float], k: int = 10
+    ) -> OpenSearchResponse:
+        self._validate_index_name(index_name)
+        if (
+            not vector
+            or not 1 <= k <= 100
+            or any(not math.isfinite(value) for value in vector)
+        ):
+            raise ValueError("vector query and k are invalid")
+        return self._request(
+            "GET",
+            f"/{index_name}/_search",
             json_body={
-                "actions": [
-                    {"remove": {"alias": alias, "index": "knowledge-chunks-*"}},
-                    {
-                        "add": {
-                            "alias": alias,
-                            "index": index_name,
-                            "is_write_index": True,
-                        }
-                    },
-                ]
+                "size": k,
+                "query": {"knn": {"vector": {"vector": list(vector), "k": k}}},
             },
         )
 
     def delete_chunk(self, index_name: str, chunk_id: str) -> None:
         self._validate_index_name(index_name)
-        self._request("DELETE", f"/{index_name}/_doc/{self._safe_id(chunk_id)}")
+        self._request(
+            "DELETE",
+            f"/{index_name}/_doc/{self._safe_id(chunk_id)}?refresh=wait_for",
+        )
 
     def delete_document(self, index_name: str, document_id: str) -> None:
         self._validate_index_name(index_name)
         self._request(
             "POST",
-            f"/{index_name}/_delete_by_query",
+            f"/{index_name}/_delete_by_query?refresh=wait_for",
             json_body={
                 "query": {"term": {"document_id": document_id}},
                 "conflicts": "proceed",
             },
         )
+
+    def delete_generation(self, index_name: str) -> None:
+        """Remove a disposable physical generation after a verified cutover."""
+
+        self._validate_index_name(index_name)
+        self._request("DELETE", f"/{index_name}")
 
     def _request(
         self,

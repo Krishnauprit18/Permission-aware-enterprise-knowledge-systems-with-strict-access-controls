@@ -1,4 +1,4 @@
-"""Local embedding contracts and deterministic offline baseline provider."""
+"""Local embedding contracts and offline providers."""
 
 from __future__ import annotations
 
@@ -8,9 +8,11 @@ from concurrent.futures import ThreadPoolExecutor
 from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass, field
 from hashlib import sha256
+from importlib import import_module
 from math import sqrt
+from pathlib import Path
 from time import sleep
-from typing import Protocol
+from typing import Protocol, SupportsFloat, cast
 
 
 class EmbeddingError(RuntimeError):
@@ -109,6 +111,92 @@ class LocalHashEmbeddingProvider:
             values[0] = 1.0
             norm = 1.0
         return tuple(value / norm for value in values)
+
+
+@dataclass(slots=True)
+class LocalSemanticEmbeddingProvider:
+    """Encode text with a locally installed FastEmbed ONNX artifact.
+
+    The model path must already exist on the local filesystem. The adapter uses
+    ``local_files_only`` and never resolves a model name or source text through
+    a hosted provider. ``LocalHashEmbeddingProvider`` remains the deterministic
+    test baseline; this adapter is the runtime semantic implementation.
+    """
+
+    model_path: str
+    config: EmbeddingConfig
+    device: str = "cpu"
+    _model: object | None = field(default=None, init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        path = Path(self.model_path)
+        if not path.is_dir():
+            raise ValueError("local embedding model path must be an existing directory")
+        if self.device not in {"cpu", "cuda", "mps"}:
+            raise ValueError("embedding device is unsupported")
+
+    def embed_batch(self, texts: tuple[str, ...]) -> EmbeddingBatch:
+        if len(texts) > self.config.batch_size:
+            raise EmbeddingInputError("embedding batch exceeds configured size")
+        if any(
+            not text.strip() or len(text) > self.config.max_text_chars for text in texts
+        ):
+            raise EmbeddingInputError("embedding text is empty or exceeds limit")
+        model = self._load_model()
+        encode = getattr(model, "embed", None)
+        if not callable(encode):
+            raise EmbeddingUnavailable("local semantic model has no embed method")
+        encode_fn = cast(Callable[..., object], encode)
+        try:
+            encoded = encode_fn(
+                list(texts),
+                batch_size=len(texts),
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise EmbeddingUnavailable("local semantic model failed") from exc
+        rows_method = getattr(encoded, "tolist", None)
+        rows_value = rows_method() if callable(rows_method) else encoded
+        rows = cast(Iterable[object], rows_value)
+        vectors: list[tuple[float, ...]] = []
+        for row in rows:
+            values = tuple(
+                float(cast(SupportsFloat, value))
+                for value in cast(Iterable[object], row)
+            )
+            vectors.append(values)
+        result = EmbeddingBatch(
+            model_name=self.config.model_name,
+            model_version=self.config.model_version,
+            dimension=self.config.dimension,
+            vectors=tuple(vectors),
+        )
+        if len(result.vectors) != len(texts):
+            raise EmbeddingVersionMismatch(
+                "local semantic model returned wrong batch size"
+            )
+        return result
+
+    def _load_model(self) -> object:
+        if self._model is not None:
+            return self._model
+        try:
+            module = import_module("fastembed")
+            model_type = getattr(module, "TextEmbedding", None)
+            if not callable(model_type):
+                raise EmbeddingUnavailable("fastembed runtime is unavailable")
+            factory = cast(Callable[..., object], model_type)
+            model = factory(
+                model_name=self.config.model_name,
+                cache_dir=self.model_path,
+                cuda=self.device == "cuda",
+                local_files_only=True,
+            )
+        except (ImportError, OSError, RuntimeError, ValueError) as exc:
+            raise EmbeddingUnavailable(
+                "local semantic embedding runtime or artifact is unavailable"
+            ) from exc
+        self._model = model
+        return model
 
 
 @dataclass(frozen=True, slots=True)

@@ -11,7 +11,7 @@ The system handles fragmented enterprise content with different tenant, account,
 
 ## Decision
 
-Current authorization is a mandatory boundary before any retrieved chunk can enter reranking, evidence resolution, citation construction, model context, model-facing embedding or analysis flow, answer cache, or external output. Authorization is deterministic, typed, deny-by-default, and fail-closed when identity or policy state is missing or uncertain.
+Current authorization is a mandatory boundary before any retrieved chunk can enter user-query reranking, evidence resolution, citation construction, model context, answer cache, export, or external output. Ingestion-time embeddings are a separate local-derived-data operation after trusted source ACL and classification validation; they do not authorize a user, and indexed vectors remain sensitive non-authoritative derivatives. Authorization is deterministic, typed, deny-by-default, and fail-closed when identity or policy state is missing or uncertain.
 
 ## Alternatives considered
 
@@ -21,7 +21,7 @@ Current authorization is a mandatory boundary before any retrieved chunk can ent
 
 ## Security and privacy impact
 
-The boundary must be enforced for lexical, semantic, cache, citation, and fallback paths. Policy freshness, revocation, deletion, tenant scope, and account relationship are first-class inputs. A policy service or protected storage design may be selected later, but it must preserve this contract.
+The boundary must be enforced for lexical, semantic, cache, citation, and fallback paths. Policy freshness, revocation, deletion, tenant scope, and account relationship are first-class inputs. A policy service or protected storage design may be selected later, but it must preserve this contract. Ingestion embedding must use a local provider and validated source metadata; user-query embedding does not grant access to source content.
 
 ## Evidence and verification
 

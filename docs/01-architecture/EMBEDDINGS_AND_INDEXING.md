@@ -21,13 +21,12 @@ typed application boundary. `ResilientEmbeddingRunner` batches input without
 building an unbounded work list, applies timeouts and bounded exponential
 retries, and rejects provider model/version/dimension mismatches.
 
-The default implementation is `LocalHashEmbeddingProvider`. It is a
-deterministic, offline baseline that requires no network or cloud model and is
-useful for local wiring, index lifecycle, and reproducible tests. It is not a
-quality claim about semantic retrieval. A locally installed model-artifact
-adapter may implement the same provider contract later; model names are
-configuration, and the default configuration never sends source text to a
-cloud provider.
+`LocalSemanticEmbeddingProvider` is the runtime adapter. It loads an already
+installed FastEmbed ONNX artifact from a local model cache with
+`local_files_only=True`, records the configured model identity/version/dimension,
+and never sends source text to a hosted provider. `LocalHashEmbeddingProvider`
+is retained only as a deterministic unit-test double; it is not a runtime
+semantic-quality implementation.
 
 Embeddings contain content-derived features only. Tenant, user, role,
 relationship, or external-audience data is never encoded into the vector.

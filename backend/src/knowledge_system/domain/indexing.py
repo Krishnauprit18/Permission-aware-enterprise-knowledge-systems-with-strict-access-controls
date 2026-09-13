@@ -36,6 +36,10 @@ class IndexSchemaConfig:
             raise ValueError("index generation must be positive")
         return f"{self.index_prefix}-{self.schema_version}-{generation:06d}"
 
+    @property
+    def index_settings(self) -> dict[str, object]:
+        return {"index.knn": True}
+
 
 @dataclass(frozen=True, slots=True)
 class SearchIndexDocument:

@@ -26,7 +26,7 @@ from knowledge_system.application.indexing import IndexingService
 from knowledge_system.domain.content import ContentChunk
 from knowledge_system.domain.embedding import (
     EmbeddingConfig,
-    LocalHashEmbeddingProvider,
+    LocalSemanticEmbeddingProvider,
     ResilientEmbeddingRunner,
 )
 from knowledge_system.domain.indexing import IndexSchemaConfig
@@ -35,6 +35,10 @@ from knowledge_system.domain.ingestion import SourceEnvelope
 
 def _load_local_env() -> None:
     path = Path(os.environ.get("PLATFORM_ENV_FILE", ".env.local"))
+    if not path.is_absolute():
+        path = Path.cwd() / path
+    if not path.is_file():
+        path = Path(__file__).resolve().parents[4] / ".env.local"
     if not path.is_file():
         raise RuntimeError(".env.local is required; run make bootstrap-platform first")
     for line in path.read_text(encoding="utf-8").splitlines():
@@ -68,11 +72,14 @@ def main() -> None:
     _load_local_env()
     root = Path(__file__).resolve().parents[4]
     embedding = EmbeddingConfig(
-        model_name=os.environ.get("EMBEDDING_MODEL_NAME", "local-hash-embedding"),
+        model_name=os.environ.get("EMBEDDING_MODEL_NAME", "all-MiniLM-L6-v2"),
         model_version=os.environ.get("EMBEDDING_MODEL_VERSION", "1"),
         dimension=int(os.environ.get("EMBEDDING_DIMENSION", "384")),
         batch_size=int(os.environ.get("EMBEDDING_BATCH_SIZE", "16")),
     )
+    model_path = os.environ.get("EMBEDDING_MODEL_PATH", "")
+    if not model_path:
+        raise RuntimeError("EMBEDDING_MODEL_PATH is required for semantic reindexing")
     schema = IndexSchemaConfig(embedding=embedding)
     transport = HttpxOpenSearchTransport(
         OpenSearchConfig(
@@ -83,7 +90,9 @@ def main() -> None:
     )
     service = IndexingService(
         OpenSearchIndexAdapter(transport),
-        ResilientEmbeddingRunner(LocalHashEmbeddingProvider(embedding), embedding),
+        ResilientEmbeddingRunner(
+            LocalSemanticEmbeddingProvider(model_path, embedding), embedding
+        ),
         schema,
     )
     chunks = _collect_chunks(root / "data" / "synthetic")

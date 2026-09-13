@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import sys
 import time
+import types
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -38,6 +40,7 @@ from knowledge_system.domain.embedding import (
     EmbeddingInputError,
     EmbeddingVersionMismatch,
     LocalHashEmbeddingProvider,
+    LocalSemanticEmbeddingProvider,
     ResilientEmbeddingRunner,
 )
 from knowledge_system.domain.indexing import (
@@ -111,6 +114,62 @@ def test_local_embedding_is_deterministic_and_versioned() -> None:
     assert (
         pytest.approx(sum(value * value for value in first.vectors[0]), abs=1e-6) == 1.0
     )
+
+
+@pytest.mark.unit
+def test_local_semantic_adapter_loads_only_an_existing_local_artifact(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    loaded: dict[str, object] = {}
+
+    class FakeModel:
+        def __init__(
+            self,
+            *,
+            model_name: str,
+            cache_dir: str,
+            cuda: bool,
+            local_files_only: bool,
+        ) -> None:
+            loaded.update(
+                model_name=model_name,
+                cache_dir=cache_dir,
+                cuda=cuda,
+                local_files_only=local_files_only,
+            )
+
+        def embed(self, texts: list[str], **_kwargs: object) -> list[list[float]]:
+            return [[float(index + 1)] * 3 for index, _text in enumerate(texts)]
+
+    monkeypatch.setitem(
+        sys.modules,
+        "fastembed",
+        types.SimpleNamespace(TextEmbedding=FakeModel),
+    )
+    config = EmbeddingConfig(
+        model_name="local-semantic-test", model_version="2026-09", dimension=3
+    )
+    provider = LocalSemanticEmbeddingProvider(str(tmp_path), config)
+
+    batch = provider.embed_batch(("semantic text", "second text"))
+
+    assert batch.model_name == "local-semantic-test"
+    assert batch.dimension == 3
+    assert len(batch.vectors) == 2
+    assert loaded == {
+        "model_name": "local-semantic-test",
+        "cache_dir": str(tmp_path),
+        "cuda": False,
+        "local_files_only": True,
+    }
+
+
+@pytest.mark.unit
+def test_local_semantic_adapter_rejects_missing_artifact(tmp_path: Path) -> None:
+    with pytest.raises(ValueError, match="existing directory"):
+        LocalSemanticEmbeddingProvider(
+            str(tmp_path / "missing"), EmbeddingConfig(dimension=3)
+        )
 
 
 @pytest.mark.unit
@@ -325,11 +384,19 @@ def test_opensearch_adapter_creates_bulk_alias_and_deletes_without_leaking_body(
 
     assert [request[0:2] for request in transport.requests] == [
         ("PUT", "/knowledge-chunks-v1-000001"),
-        ("POST", "/_bulk"),
+        ("POST", "/_bulk?refresh=wait_for"),
+        ("GET", "/_alias/knowledge-chunks-active"),
         ("POST", "/_aliases"),
-        ("DELETE", "/knowledge-chunks-v1-000001/_doc/chunk_abc"),
-        ("POST", "/knowledge-chunks-v1-000001/_delete_by_query"),
+        ("DELETE", "/knowledge-chunks-v1-000001/_doc/chunk_abc?refresh=wait_for"),
+        (
+            "POST",
+            "/knowledge-chunks-v1-000001/_delete_by_query?refresh=wait_for",
+        ),
     ]
+    assert transport.json_bodies[0] == {
+        "settings": {"index.knn": True},
+        "mappings": {"dynamic": "strict"},
+    }
     assert "Approved synthetic rollout evidence" in (transport.requests[1][2] or "")
     assert "password" not in str(transport.requests[1][2]).lower()
 
@@ -348,6 +415,23 @@ def test_opensearch_endpoint_must_be_local_or_private_and_errors_are_redacted() 
             "knowledge-chunks-v1-000001", {}
         )
     assert "secret response body" not in str(error.value)
+
+
+@pytest.mark.unit
+def test_opensearch_query_adapters_emit_bm25_and_ann_requests() -> None:
+    transport = FakeTransport()
+    adapter = OpenSearchIndexAdapter(transport)
+
+    adapter.search_bm25("knowledge-chunks-v1-000001", "approved launch", 3)
+    adapter.search_knn("knowledge-chunks-v1-000001", (0.1, 0.2, 0.3), 2)
+
+    assert transport.json_bodies == [
+        {"size": 3, "query": {"match": {"text": "approved launch"}}},
+        {
+            "size": 2,
+            "query": {"knn": {"vector": {"vector": [0.1, 0.2, 0.3], "k": 2}}},
+        },
+    ]
 
 
 @dataclass
@@ -386,6 +470,7 @@ class FakeTransport(OpenSearchTransport):
     status: int = 200
     body: dict[str, object] = field(default_factory=dict)
     requests: list[tuple[str, str, str | None]] = field(default_factory=list)
+    json_bodies: list[object | None] = field(default_factory=list)
 
     def request(
         self,
@@ -396,6 +481,7 @@ class FakeTransport(OpenSearchTransport):
         raw_body: str | None = None,
         headers: Mapping[str, str] | None = None,
     ) -> OpenSearchResponse:
-        del headers, json_body
+        del headers
         self.requests.append((method, path, raw_body))
+        self.json_bodies.append(json_body)
         return OpenSearchResponse(self.status, self.body)
