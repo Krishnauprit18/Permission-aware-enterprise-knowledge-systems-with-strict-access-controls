@@ -3,11 +3,11 @@
 ## Snapshot
 
 - Last updated: 2026-09-13
-- Current phase: `P10`
+- Current phase: `P11`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, and P09 provides typed fixture connectors plus raw-ingestion orchestration; parsing, retrieval, indexing, reranking, and generation remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, and P11 provides local embedding and disposable OpenSearch indexing; permission-first retrieval, reranking, evidence resolution, and generation remain unimplemented.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`.
 
 ## Established invariants
 
@@ -160,6 +160,14 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
   a model tokenizer; persistence, embedding, indexing, retrieval, and live
   authorization integration remain later phases.
 
-## Next authorized work
+## P11 embeddings and search index baseline
 
-Next authorized phase: P11, only after an explicit P11 prompt.
+- `knowledge_system.domain.embedding` defines a typed provider boundary, explicit model name/version/dimension configuration, deterministic offline hash embeddings, bounded batches, timeout handling, bounded retries, and fail-closed provider/version validation. The default path has no cloud transport or model endpoint.
+- `knowledge_system.domain.indexing` defines the versioned `v1` OpenSearch schema and deterministic searchable derivative documents. The mapping is strict and contains BM25 text, `knn_vector`, tenant/account/department/classification/authority/freshness, parent/version, provenance, citation locators, and ACL relationship references.
+- `IndexingService` creates immutable generation names, embeds only bounded chunk batches, bulk indexes derived documents, and performs controlled alias cutover. The OpenSearch adapter is a private/local HTTP adapter with redacted errors, no payload logging, and explicit chunk/document deletion operations.
+- `make reindex-demo` is the local operator path. It reads synthetic fixture envelopes through P10 parsing, uses the offline provider, and writes only through the internal adapter; it does not expose search to the browser and does not resolve authorization or implement user retrieval.
+- P11 focused evidence: `uv run --directory backend pytest -m unit -q --cov=knowledge_system.domain` passed 77 tests with 91.42% domain coverage. The P11 regression module covers mapping, known-fixture reindex, deterministic metadata, alias cutover, deletion, model mismatch, bounded retries/timeouts, private endpoint validation, and restricted filter metadata.
+- P11 fast/release evidence: `make verify` and `make verify-release` passed. Markdown lint passed 76 files with 0 errors; frontend tests passed 13 tests with 98.87% configured coverage; default integration passed 4 tests and skipped 5 PostgreSQL tests because the private database was not exposed to localhost; security passed 40 tests with 2 PostgreSQL skips; Bandit, Semgrep, dependency audits, detect-secrets, SBOM, ShellCheck fallback, Docker BuildKit checks, and Trivy configuration scans passed.
+- P11 limits: the hash provider is an offline deterministic baseline, not a semantic-quality claim; a model-artifact adapter and retrieval evaluation are later work. No live OpenSearch reindex was run in this checkpoint, and P11 does not implement query retrieval, permission scope resolution, reranking, evidence resolution, or generation.
+
+Next authorized phase: P12, only after an explicit P12 prompt.
