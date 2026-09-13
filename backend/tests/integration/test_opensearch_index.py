@@ -23,6 +23,7 @@ from knowledge_system.domain.content import (
     SourceLocator,
     build_content_chunk,
 )
+from knowledge_system.domain.contracts import AuthorizedObjectId
 from knowledge_system.domain.embedding import (
     EmbeddingConfig,
     LocalSemanticEmbeddingProvider,
@@ -37,6 +38,7 @@ from knowledge_system.domain.persistence import (
     DocumentVersionId,
     TenantId,
 )
+from knowledge_system.domain.retrieval import AuthorizationFilter, EffectiveSearchFilter
 
 pytestmark = pytest.mark.integration
 
@@ -209,6 +211,49 @@ def test_live_opensearch_alias_cutover_and_deletion() -> None:
         )
     finally:
         for index_name in created:
+            try:
+                adapter.delete_generation(index_name)
+            except OpenSearchAdapterError:
+                pytest.fail("live index cleanup failed")
+
+
+@pytest.mark.security
+def test_live_filtered_candidate_paths_return_metadata_only() -> None:
+    adapter, service, schema, chunks, _transport = _live_context()
+    index_name = schema.index_name(1)
+    created = False
+    try:
+        service.reindex(chunks, 1)
+        created = True
+        authorization = AuthorizationFilter(
+            tenant_id="northstar",
+            resource_ids=(AuthorizedObjectId(f"resource:{chunks[0].document_id}"),),
+            authorization_model_id="model-p12",
+            tuple_version="tuples-p12",
+            policy_version="policy-p12",
+            decision_fingerprint="f" * 64,
+        )
+        filters = EffectiveSearchFilter(authorization=authorization)
+        query_vector = service.embeddings.provider.embed_batch(
+            ("approved launch date",)
+        ).vectors[0]
+
+        lexical = adapter.search_bm25_candidates(
+            "approved launch date", filters, 10, index_name=index_name
+        )
+        vector = adapter.search_vector_candidates(
+            query_vector, filters, 10, index_name=index_name
+        )
+
+        for candidates in (lexical, vector):
+            assert candidates
+            assert {candidate.document_id for candidate in candidates} == {
+                str(chunks[0].document_id)
+            }
+            assert all("text" not in candidate.provenance for candidate in candidates)
+            assert all("vector" not in candidate.provenance for candidate in candidates)
+    finally:
+        if created:
             try:
                 adapter.delete_generation(index_name)
             except OpenSearchAdapterError:

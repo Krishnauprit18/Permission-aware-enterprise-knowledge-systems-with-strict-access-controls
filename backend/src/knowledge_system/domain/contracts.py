@@ -44,6 +44,12 @@ class CandidateEnvelope:
     tenant_id: str
     source: str
     access_level: str
+    chunk_id: str = ""
+    document_id: str = ""
+    document_version_id: str = ""
+    lexical_score: float | None = None
+    vector_score: float | None = None
+    provenance: Mapping[str, str] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)

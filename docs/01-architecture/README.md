@@ -10,3 +10,4 @@ System boundaries, typed contracts, data flow, storage, source adapters, retriev
 - `VERSIONING.md` defines API, index, embedding, prompt, evaluation, authorization, schema, and release compatibility versions.
 - `DATA_MODEL.md` defines canonical PostgreSQL entities, lifecycle, stable IDs, and authority boundaries.
 - `ARCHITECTURE_REVIEW.md` records the P02 invariant, pipeline, dependency, deployment, and residual-risk review.
+- `PERMISSION_FIRST_RETRIEVAL.md` defines the P12 authorization-first query ordering, immutable filter construction, hybrid candidate paths, and ListObjects scale boundary.

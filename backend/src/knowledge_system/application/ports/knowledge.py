@@ -1,4 +1,4 @@
-"""Typed ports for future content, retrieval, generation, and audit adapters."""
+"""Typed ports for content, retrieval, generation, and audit adapters."""
 
 from collections.abc import Sequence
 from typing import Protocol
@@ -12,11 +12,11 @@ from knowledge_system.application.ports.content import (
 from knowledge_system.application.ports.indexing import EmbeddingProvider
 from knowledge_system.domain.contracts import (
     AuthorizedChunk,
-    AuthorizedObjectId,
     CandidateEnvelope,
     EvidenceId,
     PrincipalContext,
 )
+from knowledge_system.domain.retrieval import EffectiveSearchFilter
 
 # These aliases keep the original architecture vocabulary while the richer P10
 # contracts carry source locators, lineage, limits, and security metadata.
@@ -31,14 +31,32 @@ Embedder = EmbeddingProvider
 class SearchBackend(Protocol):
     """Returns metadata-only candidates under server-generated constraints."""
 
-    def search(self, query: str, tenant_id: str) -> Sequence[CandidateEnvelope]: ...
+    def search_bm25_candidates(
+        self,
+        query: str,
+        filters: EffectiveSearchFilter,
+        size: int,
+        *,
+        index_name: str = "knowledge-chunks-active",
+    ) -> Sequence[CandidateEnvelope]: ...
 
-    def fetch_authorized_text(
-        self, object_id: AuthorizedObjectId, tenant_id: str
-    ) -> AuthorizedChunk: ...
+    def search_vector_candidates(
+        self,
+        vector: Sequence[float],
+        filters: EffectiveSearchFilter,
+        size: int,
+        *,
+        index_name: str = "knowledge-chunks-active",
+    ) -> Sequence[CandidateEnvelope]: ...
 
 
 AuthorizationService = AuthorizationPort
+
+
+class QueryEmbedder(Protocol):
+    """Embeds only the bounded query string after authorization scope resolution."""
+
+    provider: EmbeddingProvider
 
 
 class Reranker(Protocol):

@@ -12,7 +12,9 @@ from urllib.parse import urlparse
 
 import httpx
 
+from knowledge_system.domain.contracts import AuthorizedObjectId, CandidateEnvelope
 from knowledge_system.domain.indexing import SearchIndexDocument
+from knowledge_system.domain.retrieval import EffectiveSearchFilter
 
 
 class OpenSearchAdapterError(RuntimeError):
@@ -208,6 +210,70 @@ class OpenSearchIndexAdapter:
             },
         )
 
+    def search_bm25_candidates(
+        self,
+        query: str,
+        filters: EffectiveSearchFilter,
+        size: int,
+        *,
+        index_name: str = "knowledge-chunks-active",
+    ) -> tuple[CandidateEnvelope, ...]:
+        """Search with server-owned filters and return metadata only."""
+
+        self._validate_index_name(index_name)
+        self._validate_query_size(query, size)
+        response = self._request(
+            "GET",
+            f"/{index_name}/_search",
+            json_body={
+                "_source": self._candidate_source_fields(),
+                "size": size,
+                "query": {
+                    "bool": {
+                        "must": [{"match": {"text": query}}],
+                        "filter": [self._filter_clause(filters)],
+                    }
+                },
+            },
+        )
+        return self._candidate_hits(response, score_field="lexical_score")
+
+    def search_vector_candidates(
+        self,
+        vector: Sequence[float],
+        filters: EffectiveSearchFilter,
+        size: int,
+        *,
+        index_name: str = "knowledge-chunks-active",
+    ) -> tuple[CandidateEnvelope, ...]:
+        """Run ANN search inside the same mandatory authorization filter."""
+
+        self._validate_index_name(index_name)
+        if (
+            not 1 <= size <= 100
+            or not vector
+            or any(not math.isfinite(value) for value in vector)
+        ):
+            raise ValueError("vector query and size are invalid")
+        response = self._request(
+            "GET",
+            f"/{index_name}/_search",
+            json_body={
+                "_source": self._candidate_source_fields(),
+                "size": size,
+                "query": {
+                    "knn": {
+                        "vector": {
+                            "vector": list(vector),
+                            "k": size,
+                            "filter": self._filter_clause(filters),
+                        }
+                    }
+                },
+            },
+        )
+        return self._candidate_hits(response, score_field="vector_score")
+
     def delete_chunk(self, index_name: str, chunk_id: str) -> None:
         self._validate_index_name(index_name)
         self._request(
@@ -253,6 +319,141 @@ class OpenSearchIndexAdapter:
                 f"OpenSearch request failed with status {response.status_code}"
             )
         return response
+
+    @staticmethod
+    def _validate_query_size(query: str, size: int) -> None:
+        if not query.strip() or len(query) > 2_000 or not 1 <= size <= 100:
+            raise ValueError("query and size are invalid")
+
+    @staticmethod
+    def _candidate_source_fields() -> list[str]:
+        return [
+            "chunk_id",
+            "document_id",
+            "document_version_id",
+            "tenant_id",
+            "source_type",
+            "source_external_id",
+            "account_ids",
+            "department",
+            "classification",
+            "citation_locators",
+            "updated_at",
+            "source_url",
+            "author",
+            "language",
+            "authority_level",
+            "status",
+            "acl_relationship_refs",
+        ]
+
+    @staticmethod
+    def _filter_clause(filters: EffectiveSearchFilter) -> dict[str, object]:
+        if not filters.has_authorized_resources:
+            return {"match_none": {}}
+        clauses: list[dict[str, object]] = [
+            {"term": {"tenant_id": filters.authorization.tenant_id}},
+            {"terms": {"document_id": list(filters.authorization.document_ids)}},
+        ]
+        if filters.account_ids:
+            clauses.append({"terms": {"account_ids": list(filters.account_ids)}})
+        if filters.department is not None:
+            clauses.append({"term": {"department": filters.department}})
+        date_range: dict[str, str] = {}
+        if filters.updated_after is not None:
+            date_range["gte"] = filters.updated_after.isoformat()
+        if filters.updated_before is not None:
+            date_range["lte"] = filters.updated_before.isoformat()
+        if date_range:
+            clauses.append({"range": {"updated_at": date_range}})
+        return {"bool": {"filter": clauses}}
+
+    @staticmethod
+    def _candidate_hits(
+        response: OpenSearchResponse, *, score_field: str
+    ) -> tuple[CandidateEnvelope, ...]:
+        hits_container = response.body.get("hits")
+        if not isinstance(hits_container, Mapping):
+            return ()
+        raw_hits = hits_container.get("hits")
+        if not isinstance(raw_hits, list):
+            return ()
+        candidates: list[CandidateEnvelope] = []
+        for raw_hit in raw_hits:
+            if not isinstance(raw_hit, Mapping):
+                continue
+            source = raw_hit.get("_source")
+            if not isinstance(source, Mapping):
+                continue
+            candidate = OpenSearchIndexAdapter._candidate_from_source(
+                source, raw_hit.get("_score"), score_field
+            )
+            if candidate is not None:
+                candidates.append(candidate)
+        return tuple(candidates)
+
+    @staticmethod
+    def _candidate_from_source(
+        source: Mapping[str, object], score: object, score_field: str
+    ) -> CandidateEnvelope | None:
+        required = ("chunk_id", "document_id", "document_version_id", "tenant_id")
+        if any(not isinstance(source.get(field), str) for field in required):
+            return None
+        chunk_id = str(source["chunk_id"])
+        document_id = str(source["document_id"])
+        document_version_id = str(source["document_version_id"])
+        tenant_id = str(source["tenant_id"])
+        if not chunk_id or not document_id or not tenant_id:
+            return None
+        if not isinstance(source.get("source_type"), str) or not isinstance(
+            source.get("classification"), str
+        ):
+            return None
+        account_ids = source.get("account_ids")
+        locators = source.get("citation_locators")
+        if not isinstance(account_ids, list) or not all(
+            isinstance(value, str) for value in account_ids
+        ):
+            return None
+        if not isinstance(locators, list) or not all(
+            isinstance(value, str) for value in locators
+        ):
+            return None
+        updated_at = source.get("updated_at")
+        if not isinstance(updated_at, str):
+            return None
+        numeric_score = float(score) if isinstance(score, (int, float)) else None
+        raw_acl_refs = source.get("acl_relationship_refs", [])
+        acl_refs = (
+            [value for value in raw_acl_refs if isinstance(value, str)]
+            if isinstance(raw_acl_refs, list)
+            else []
+        )
+        provenance = {
+            "source_external_id": str(source.get("source_external_id", document_id)),
+            "account_ids": ",".join(account_ids),
+            "department": str(source.get("department", "")),
+            "citation_locators": "\x1f".join(locators),
+            "updated_at": updated_at,
+            "source_url": str(source.get("source_url", "")),
+            "author": str(source.get("author", "")),
+            "language": str(source.get("language", "")),
+            "authority_level": str(source.get("authority_level", "")),
+            "status": str(source.get("status", "")),
+            "acl_relationship_refs": "\x1f".join(acl_refs),
+        }
+        return CandidateEnvelope(
+            object_id=AuthorizedObjectId(f"resource:{document_id}"),
+            tenant_id=tenant_id,
+            source=str(source["source_type"]),
+            access_level=str(source["classification"]),
+            chunk_id=chunk_id,
+            document_id=document_id,
+            document_version_id=document_version_id,
+            lexical_score=numeric_score if score_field == "lexical_score" else None,
+            vector_score=numeric_score if score_field == "vector_score" else None,
+            provenance=provenance,
+        )
 
     @staticmethod
     def _validate_index_name(index_name: str) -> None:

@@ -10,3 +10,6 @@ it contains no source content or credentials.
 
 `SYNTHETIC_DATASET.md` documents the checked-in multi-source demo/evaluation
 corpus, its evidence timeline, OpenFGA tuple inputs, and validation contract.
+
+`RETRIEVAL_EVALUATION.md` documents the P12 retrieval-only evaluation hook and
+keeps retrieval metrics separate from future generation evaluation.
