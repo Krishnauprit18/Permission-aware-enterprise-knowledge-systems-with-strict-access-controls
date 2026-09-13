@@ -7,7 +7,7 @@
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
 - Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, and P11 provides local embedding and disposable OpenSearch indexing; permission-first retrieval, reranking, evidence resolution, and generation remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation implementation pending.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`.
 
 ## Established invariants
 
