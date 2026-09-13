@@ -1,0 +1,12 @@
+{
+  "call_id": "CALL-ACME-2026-08-28",
+  "account_id": "acme",
+  "call_at": "2026-08-28T14:00:00Z",
+  "participants": ["Maya Rao", "Acme Retail project team"],
+  "transcript": [
+    "Acme asked whether the August target remained realistic.",
+    "Northstar stated that the date was still under review and not a commitment.",
+    "The follow-up action was to wait for the release board decision."
+  ],
+  "revision": 1
+}

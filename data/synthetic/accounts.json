@@ -1,0 +1,33 @@
+{
+  "version": "accounts-v1",
+  "accounts": [
+    {
+      "id": "acme",
+      "tenant_id": "northstar",
+      "name": "Acme Retail",
+      "industry": "retail operations",
+      "synthetic": true
+    },
+    {
+      "id": "beacon",
+      "tenant_id": "northstar",
+      "name": "Beacon Health",
+      "industry": "healthcare scheduling operations",
+      "synthetic": true
+    },
+    {
+      "id": "cedar",
+      "tenant_id": "northstar",
+      "name": "Cedar Logistics",
+      "industry": "shipment exception handling",
+      "synthetic": true
+    },
+    {
+      "id": "harbor",
+      "tenant_id": "harbor-labs",
+      "name": "Harbor Labs",
+      "industry": "unrelated synthetic tenant",
+      "synthetic": true
+    }
+  ]
+}

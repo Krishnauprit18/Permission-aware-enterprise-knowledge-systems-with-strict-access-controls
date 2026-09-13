@@ -1,0 +1,65 @@
+{
+  "version": "users-v1",
+  "users": [
+    {
+      "id": "alice-account-manager",
+      "subject_id": "alice-account-manager",
+      "display_name": "Maya Rao",
+      "tenant_id": "northstar",
+      "role": "Account Manager",
+      "department": "sales-customer-success",
+      "account_ids": ["acme"],
+      "groups": ["sales-customer-success"]
+    },
+    {
+      "id": "priya-product-manager",
+      "subject_id": "priya-product-manager",
+      "display_name": "Leon Fischer",
+      "tenant_id": "northstar",
+      "role": "Product Manager",
+      "department": "product",
+      "account_ids": ["acme", "beacon"],
+      "groups": ["product"]
+    },
+    {
+      "id": "miguel-support-engineer",
+      "subject_id": "miguel-support-engineer",
+      "display_name": "Priya Nair",
+      "tenant_id": "northstar",
+      "role": "Support Engineer",
+      "department": "engineering",
+      "account_ids": ["beacon", "cedar"],
+      "groups": ["engineering", "support-engineering"]
+    },
+    {
+      "id": "leah-legal-counsel",
+      "subject_id": "leah-legal-counsel",
+      "display_name": "Ada Okafor",
+      "tenant_id": "northstar",
+      "role": "Legal Counsel",
+      "department": "legal",
+      "account_ids": ["acme", "beacon", "cedar"],
+      "groups": ["legal"]
+    },
+    {
+      "id": "dani-finance",
+      "subject_id": "dani-finance",
+      "display_name": "Tomas Silva",
+      "tenant_id": "northstar",
+      "role": "Finance Analyst",
+      "department": "finance",
+      "account_ids": ["acme", "beacon", "cedar"],
+      "groups": ["finance"]
+    },
+    {
+      "id": "harbor-user",
+      "subject_id": "harbor-user",
+      "display_name": "Harbor Demo User",
+      "tenant_id": "harbor-labs",
+      "role": "Account Manager",
+      "department": "sales-customer-success",
+      "account_ids": ["harbor"],
+      "groups": ["sales-customer-success"]
+    }
+  ]
+}

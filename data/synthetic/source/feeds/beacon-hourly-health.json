@@ -1,0 +1,10 @@
+{
+  "feed_id": "beacon-health-hourly",
+  "account_id": "beacon",
+  "observed_at": "2026-09-13T10:00:00Z",
+  "update_cadence_minutes": 60,
+  "current_window": "2026-09-13T09:00:00Z/2026-09-13T10:00:00Z",
+  "health": "green",
+  "message": "Synthetic Beacon connector heartbeat completed; no customer-impacting errors observed.",
+  "revision": 14
+}

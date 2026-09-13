@@ -1,0 +1,19 @@
+{
+  "channel": "eng-acme-rollout",
+  "thread_id": "slack-thread-acme-77",
+  "messages": [
+    {
+      "message_id": "slack-acme-77-1",
+      "author": "Ravi Chen",
+      "sent_at": "2026-09-09T08:10:00Z",
+      "text": "I am worried the Acme load test is too narrow. The 2026-09-24 date may be optimistic if the rollback rehearsal exposes another queue issue."
+    },
+    {
+      "message_id": "slack-acme-77-2",
+      "author": "Nora Patel",
+      "sent_at": "2026-09-09T09:00:00Z",
+      "text": "Please route concerns through the release review; this thread is an informal engineering concern, not an approval change."
+    }
+  ],
+  "account_id": "acme"
+}

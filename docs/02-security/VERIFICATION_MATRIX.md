@@ -34,6 +34,7 @@ This matrix defines planned engineering verification guidance. It does not claim
 | Revocation, updates, deletion | Bounded lag tests for hourly updates, ACL changes, de-permissioning, deletion, derivatives, and caches | FR-UPDATE-001/002; FR-DELETE-001; T-15/T-18 |
 | Traces and logs | Structured schema, redaction, access-control, secret-scan, and canary tests | FR-TRACE-001; T-03/T-12 |
 | Local operations and supply chain | Dependency review, SBOM, artifact integrity, source/build provenance, restore and rollback evidence | T-05/T-11/T-17 |
+| Synthetic dataset integrity | Deterministic fixture validation, source-hash checks, tenant/ACL/lifecycle/lineage validation, required scenario coverage, and synthetic-content safety checks | P08; T-40/T-41 |
 
 ## NIST SSDF 1.1 mapping
 

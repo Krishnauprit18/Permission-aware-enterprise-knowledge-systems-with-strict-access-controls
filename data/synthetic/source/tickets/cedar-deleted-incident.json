@@ -1,0 +1,12 @@
+{
+  "ticket_id": "SUP-CEDAR-0991",
+  "account_id": "cedar",
+  "title": "Deleted shipment exception incident",
+  "status": "deleted",
+  "opened_at": "2026-05-12T08:00:00Z",
+  "updated_at": "2026-05-12T18:00:00Z",
+  "deleted_at": "2026-09-10T12:00:00Z",
+  "deletion_reason": "Source retention request",
+  "comments": ["This source item is retained only as a deletion marker."],
+  "synthetic_notice": "All names, identifiers, and operational facts are fictional."
+}

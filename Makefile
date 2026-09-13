@@ -9,7 +9,7 @@ PLATFORM_SERVICES := postgres opensearch keycloak openfga minio jaeger otel-coll
 SHELLCHECK_IMAGE := koalaman/shellcheck:stable@sha256:b9389b73c8f26f710a7171cb7d8848a34a9c1e07a7865e727c9ec4ce99f9a83f
 TRIVY_IMAGE := aquasec/trivy:0.56.2@sha256:9aebdee5e85129a1bdd9977676baa6cf0579195fc4809570cc9dd55f6e92863c
 
-.PHONY: bootstrap fmt lint lint-docs typecheck test test-unit test-integration \
+.PHONY: bootstrap fmt lint lint-docs dataset-validate typecheck test test-unit test-integration \
 	test-security sbom scan container-lint container-scan architecture-test verify verify-release \
 	shellcheck platform-config platform-status keycloak-bootstrap openfga-bootstrap db-migrate db-schema-doc up down reset-demo seed-demo
 
@@ -30,6 +30,9 @@ lint:
 
 lint-docs:
 	npm --prefix frontend exec -- markdownlint-cli2 AGENTS.md 'docs/**/*.md'
+
+dataset-validate:
+	$(BACKEND_RUN) python -m knowledge_system.dataset.validator
 
 typecheck:
 	$(BACKEND_RUN) mypy
@@ -106,7 +109,7 @@ platform-config:
 	./scripts/bootstrap-platform.sh
 	./scripts/compose-local.sh config --quiet
 
-verify: fmt lint lint-docs typecheck test test-security architecture-test
+verify: fmt lint lint-docs dataset-validate typecheck test test-security architecture-test
 	@printf '%s\n' 'Local fast verification passed.'
 
 verify-release: verify shellcheck scan sbom container-lint container-scan
@@ -150,4 +153,5 @@ reset-demo:
 	./scripts/migrate-database.sh
 
 seed-demo:
-	@printf '%s\n' 'P04 platform has no product demo seed data; later phases own this target.'
+	$(MAKE) dataset-validate
+	@printf '%s\n' 'Synthetic demo/evaluation fixtures validated; ingestion and database loading remain future phase work.'

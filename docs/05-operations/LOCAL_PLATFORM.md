@@ -85,7 +85,7 @@ The runner records migration filenames and SHA-256 checksums in
 `schema_migrations`; it fails on checksum drift and never silently skips a
 failed migration. The runtime application does not create tables.
 
-`make down` removes containers and the private network but preserves named volumes. `make reset-demo` removes this project’s containers, network, and named volumes, then recreates the empty platform, `raw` bucket, and deterministic OpenFGA relationship state. It does not remove `.env.local`, Docker images, or files outside the project. There is no product source/demo seed yet.
+`make down` removes containers and the private network but preserves named volumes. `make reset-demo` removes this project’s containers, network, and named volumes, then recreates the empty platform, `raw` bucket, and deterministic OpenFGA relationship state. It does not remove `.env.local`, Docker images, or files outside the project. P08 adds checked-in synthetic fixtures; `make seed-demo` validates them, but ingestion and database loading remain future phase work.
 
 ## Backup and restore
 
