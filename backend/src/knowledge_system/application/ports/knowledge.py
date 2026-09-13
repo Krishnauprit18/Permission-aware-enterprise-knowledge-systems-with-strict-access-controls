@@ -9,6 +9,7 @@ from knowledge_system.application.ports.content import (
     ContentNormalizer,
     ContentParser,
 )
+from knowledge_system.application.ports.indexing import EmbeddingProvider
 from knowledge_system.domain.contracts import (
     AuthorizedChunk,
     AuthorizedObjectId,
@@ -24,10 +25,7 @@ Normalizer = ContentNormalizer
 Chunker = ContentChunker
 
 
-class Embedder(Protocol):
-    """Produces embeddings through a local model adapter."""
-
-    def embed(self, texts: Sequence[str]) -> Sequence[Sequence[float]]: ...
+Embedder = EmbeddingProvider
 
 
 class SearchBackend(Protocol):

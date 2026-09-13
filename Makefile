@@ -10,8 +10,8 @@ SHELLCHECK_IMAGE := koalaman/shellcheck:stable@sha256:b9389b73c8f26f710a7171cb7d
 TRIVY_IMAGE := aquasec/trivy:0.56.2@sha256:9aebdee5e85129a1bdd9977676baa6cf0579195fc4809570cc9dd55f6e92863c
 
 .PHONY: bootstrap fmt lint lint-docs dataset-validate typecheck test test-unit test-integration \
-	test-security sbom scan container-lint container-scan architecture-test verify verify-release \
-	shellcheck platform-config platform-status keycloak-bootstrap openfga-bootstrap db-migrate db-schema-doc up down reset-demo seed-demo
+ test-security sbom scan container-lint container-scan architecture-test verify verify-release reindex-demo \
+ shellcheck platform-config platform-status keycloak-bootstrap openfga-bootstrap db-migrate db-schema-doc up down reset-demo seed-demo
 
 bootstrap:
 	command -v uv >/dev/null
@@ -155,3 +155,6 @@ reset-demo:
 seed-demo:
 	$(MAKE) dataset-validate
 	@printf '%s\n' 'Synthetic demo/evaluation fixtures validated; runtime ingestion job bootstrap remains future phase work.'
+
+reindex-demo:
+	./scripts/reindex-demo.sh
