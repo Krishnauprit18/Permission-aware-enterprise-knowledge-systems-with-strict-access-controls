@@ -1,0 +1,30 @@
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Generated runtime data and build output
+.venv/
+venv/
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+node_modules/
+dist/
+build/
+coverage/
+reports/
+sbom/
+local-data/
+tmp/
+
+# Editor and OS files
+.DS_Store
+.idea/
+.vscode/
+*.swp

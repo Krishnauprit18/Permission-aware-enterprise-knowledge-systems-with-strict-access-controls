@@ -1,0 +1,5 @@
+# Project Markdown policy: long-form specifications and evidence tables are
+# intentionally allowed to wrap at the renderer rather than at a fixed column.
+default: true
+MD013: false
+MD060: false

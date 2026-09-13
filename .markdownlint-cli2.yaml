@@ -1,0 +1,4 @@
+# Prompt archives are exact sanitized records and are validated by SHA-256
+# ledger checks instead of authored-document style rules.
+ignores:
+  - "docs/codex/prompts/**"
