@@ -73,6 +73,7 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - Auth endpoints expose generic errors, emit allowlisted structured diagnostics, attach correlation IDs, and provide local-process session revocation plus browser logout. Resource authorization remains a later server-side OpenFGA/application decision.
 - P05 evidence: focused auth tests, full `make verify`, full `make verify-release`, Keycloak bootstrap, OIDC discovery, and `make platform-status` passed. TestClient emitted non-failing upstream deprecation warnings.
 - P05 residual risks: in-process revocation is not a multi-process session store, and already-issued tokens can outlive a Keycloak user disable until provider status/back-channel enforcement exists. Both are documented in `docs/02-security/AUTHENTICATION_MODEL.md` and the risk register.
+- P05 checkpoint commit: `03be6c1` (`feat(P05): implement identity and authentication`) is pushed to `origin/master`.
 
 ## Next authorized work
 
