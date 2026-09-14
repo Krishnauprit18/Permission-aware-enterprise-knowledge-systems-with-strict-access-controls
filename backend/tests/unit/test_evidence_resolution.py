@@ -10,6 +10,7 @@ import pytest
 
 from knowledge_system.application.evidence import (
     DeterministicEvidenceResolver,
+    EvidenceContentUnavailable,
     EvidenceResolutionLimits,
     EvidenceResolutionService,
     LocalPairwiseReranker,
@@ -186,6 +187,15 @@ class FakeEvidenceStore:
         return tuple(materials)
 
 
+@dataclass
+class MissingEvidenceStore:
+    def load(
+        self, candidates: Sequence[RetrievalCandidate]
+    ) -> Sequence[EvidenceMaterial]:
+        del candidates
+        return ()
+
+
 @dataclass(frozen=True)
 class BrokenReranker:
     reranker_version: str = "broken-reranker-v1"
@@ -229,6 +239,23 @@ def _service(
         resolver=DeterministicEvidenceResolver(),
         limits=EvidenceResolutionLimits(max_rerank_candidates=20),
     )
+
+
+def test_content_store_cannot_silently_omit_an_authorized_candidate() -> None:
+    candidate = _candidate("doc-approved", ordinal=0)
+    authorization = FakeAuthorization({str(candidate.resource_id)})
+    service = EvidenceResolutionService(
+        authorization=authorization,
+        content_store=MissingEvidenceStore(),
+        reranker=LocalPairwiseReranker(),
+        resolver=DeterministicEvidenceResolver(),
+        limits=EvidenceResolutionLimits(max_rerank_candidates=20),
+    )
+
+    with pytest.raises(
+        EvidenceContentUnavailable, match="authorized evidence unavailable"
+    ):
+        service.resolve(_principal(), "approved date", _result(candidate))
 
 
 def test_conflicting_acme_timeline_preserves_authority_and_relevance_separately() -> (

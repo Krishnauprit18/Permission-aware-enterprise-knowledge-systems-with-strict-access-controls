@@ -487,17 +487,22 @@ class EvidenceResolutionService:
         candidates_by_chunk = {
             candidate.chunk_id: candidate for candidate in candidates
         }
+        if len(materials) != len(candidates):
+            raise EvidenceContentUnavailable("authorized evidence unavailable")
         verified: list[EvidenceMaterial] = []
+        loaded_chunk_ids: set[str] = set()
         for material in materials:
             expected = candidates_by_chunk.get(material.candidate.chunk_id)
             if (
                 expected is None
+                or material.candidate.chunk_id in loaded_chunk_ids
                 or material.candidate.resource_id != expected.resource_id
                 or material.candidate.tenant_id != expected.tenant_id
                 or material.candidate.document_version_id
                 != expected.document_version_id
             ):
                 raise EvidenceContentUnavailable("authorized evidence unavailable")
+            loaded_chunk_ids.add(material.candidate.chunk_id)
             verified.append(replace(material, candidate=expected))
         return tuple(verified)
 

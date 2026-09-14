@@ -23,6 +23,7 @@ reports/
 sbom/
 local-data/
 tmp/
+*:memory:.ses
 
 # Editor and OS files
 .DS_Store

@@ -30,3 +30,11 @@ The synthetic Acme timeline must establish all of the following:
 These assertions measure deterministic evidence correctness. They do not prove
 retrieval recall, LLM truthfulness, citation validity, answer shareability, or
 external audience policy; those remain separate evaluations.
+
+## Local Semantic Reranker Evidence
+
+The P13R acceptance check runs the pinned cache-only cross-encoder against an
+authorized approved-release pair and an unrelated pair. It requires the former
+to rank first and records the model/revision in the reranker version. This is
+an adapter acceptance test, not a broad relevance-quality benchmark. Retrieval
+metrics remain owned by the separate retrieval evaluation harness.

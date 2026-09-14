@@ -36,6 +36,18 @@ class RawObjectStore(Protocol):
     def put(self, snapshot: RawSnapshot) -> RawObjectRef: ...
 
 
+class RawObjectReader(Protocol):
+    """Read a bounded raw snapshot after a caller verifies canonical metadata."""
+
+    def get(
+        self,
+        object_uri: str,
+        *,
+        expected_content_hash: str,
+        max_bytes: int,
+    ) -> bytes: ...
+
+
 class AuthorizationRelationshipSink(Protocol):
     """Apply or remove mapped relationship intents in a dedicated adapter boundary."""
 

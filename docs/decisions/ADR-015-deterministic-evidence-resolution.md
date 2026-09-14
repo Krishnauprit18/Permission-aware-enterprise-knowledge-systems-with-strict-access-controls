@@ -14,12 +14,17 @@ source of authority or security classification.
 
 ## Decision
 
-Re-check `can_view` before the first P13 text fetch. Load text only through a
-typed content store for that approved subset, sanitize it with the P10 normalizer,
-and run a bounded local query-document pair scorer. Feed only the resulting
+Re-check `can_view` before the first P13 text fetch. Load text only through
+`PostgresMinioEvidenceContentStore` for that approved subset. The adapter
+validates active canonical source/version/chunk metadata, reads a bounded and
+SHA-256-verified MinIO snapshot, then reconstructs and validates the P10 chunk
+before returning text. Sanitize it with the P10 normalizer and run the bounded
+cache-only FastEmbed `Xenova/ms-marco-MiniLM-L-6-v2` ONNX cross-encoder, pinned
+at revision `a09144355adeed5f58c8ed011d209bf8ee5a1fec`. Feed only the resulting
 authorized materials to a deterministic resolver that uses trusted policy
 metadata for lifecycle, authority, effective time, status, conflict groups, and
-supersession links.
+supersession links. The lexical scorer is retained for deterministic tests and
+safe fallback behavior only.
 
 The resolver emits stable `EvidencePacket` values, source groups, conflict
 records, and separate most-relevant and most-authoritative IDs. It retains
@@ -50,11 +55,13 @@ an LLM context.
 `backend/tests/unit/test_evidence_resolution.py` covers the Acme August/
 September/approved/conflict sequence, tentative/approved status, lower-authority
 engineering concern, duplicate collapse, supersession, current authorization,
-and local reranker fallback.
+and local reranker fallback. P13R adds a cache-only semantic-reranker acceptance
+test and an opt-in real PostgreSQL/MinIO test that reconstructs one canonical
+chunk and rejects altered citation locators.
 
 ## Consequences
 
-The local pairwise reranker is deterministic and offline but not a semantic
-quality benchmark. A production content-store adapter and metadata projection
-must be added before claiming end-to-end persisted evidence resolution. Any
+The pinned local cross-encoder is a real semantic adapter, but its acceptance
+test is not a broad relevance-quality benchmark. The production-shaped
+content-store adapter has a real local PostgreSQL/MinIO integration path; any
 policy-rule change requires a resolver-version change and evidence evaluation.

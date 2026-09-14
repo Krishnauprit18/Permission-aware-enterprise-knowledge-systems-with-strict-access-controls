@@ -9,7 +9,7 @@ interpret authority, freshness, lifecycle, or conflicts.
 ```text
 authorized P12 candidates
   -> current can_view re-check for each candidate
-  -> typed evidence-content store fetch for that approved subset only
+  -> PostgreSQL/MinIO evidence-content store fetch for that approved subset only
   -> deterministic text sanitization and bounds check
   -> bounded local pairwise reranker
   -> deterministic evidence policy resolver
@@ -23,10 +23,12 @@ boundary. Authorization-store failures raise a generic protected failure.
 
 ## Reranking
 
-`LocalPairwiseReranker` is a local deterministic query-document pair scorer.
-It compares bounded query and sanitized authorized text, then emits only a
-score/rank for supplied stable evidence IDs. It is an offline baseline, not a
-semantic-quality claim or authorization mechanism.
+`FastEmbedCrossEncoderReranker` is the configured local semantic reranker. It
+uses the pinned `Xenova/ms-marco-MiniLM-L-6-v2` ONNX cross-encoder artifact at
+revision `a09144355adeed5f58c8ed011d209bf8ee5a1fec`, loaded only from an
+operator-provisioned local cache. It compares bounded query and sanitized
+authorized text, then emits only score/rank records for supplied stable
+evidence IDs. It is never an authorization mechanism.
 
 - Input is capped at 20 authorized materials by default, within the P12 bound.
 - A 250 ms local timeout is enforced during scoring.
@@ -34,6 +36,30 @@ semantic-quality claim or authorization mechanism.
   IDs cause safe fallback rather than candidate admission.
 - Explicit reranker timeout/unavailability preserves P12's already-authorized
   order. Fallback does not reload, search, or widen authorization.
+- `LocalPairwiseReranker` remains a deterministic test and safe-fallback
+  component; it is not the production semantic adapter.
+
+## Canonical Evidence Store
+
+`PostgresMinioEvidenceContentStore` is the production-shaped implementation of
+the P13 content-store port. It is called only after the service re-checks
+`can_view`; it does not decide authorization. For every requested candidate it:
+
+1. Reads the tenant-bound chunk, document version, and source item from
+   PostgreSQL and rejects missing, inactive, tenant-mismatched, or metadata-
+   mismatched rows.
+2. Reads the named MinIO raw object only from the configured bucket, with a
+   safe URI/path, maximum-byte limit, and canonical SHA-256 verification.
+3. Reconstructs the P10 source-aware chunk from the verified source snapshot,
+   then requires the chunk ID, ordinal, content hash, and citation locators to
+   match the metadata-only candidate exactly.
+4. Derives authority and lifecycle policy solely from canonical metadata and
+   lineage. Missing business-status/conflict fields remain informational or
+   absent; source text is never interpreted as policy.
+
+The adapter returns one material for each approved candidate or fails the
+protected operation. It never silently omits a candidate, returns text for a
+deleted row, or trusts OpenSearch fields as canonical truth.
 
 ## Evidence policy
 
