@@ -178,3 +178,11 @@
 - Full backend unit gate: 123 selected tests passed with 90.26% measured domain coverage. This includes grounded answer, no-evidence refusal, conflict notices, fabricated citation retry/refusal, injected source-data delimiting, cross-request context rejection, generic timeout/unavailable errors, local endpoint constraints, no-tools payload, malformed runtime output, proxy bypass configuration, concurrency limits, and domain contract rejection paths.
 - Final `UV_CACHE_DIR=/tmp/p14-uv-cache make verify` passed: backend unit 123 selected, frontend 13, integration 4 passed with 10 skips, security 78 passed with 7 skips, plus formatting, typing, lint, Markdown, dataset, prompt-integrity, SBOM, and secret checks.
 - `make verify-release` passed for the P14 implementation before the final proxy-hardening change; the final fast gate passed after that change. The local runtime probe `curl --fail --silent --show-error --max-time 2 http://127.0.0.1:11434/api/tags` could not connect, so the local adapter has contract/fake-transport evidence only and no live local-model claim is made.
+
+## P15
+
+- Focused policy/generation checks: `UV_CACHE_DIR=/tmp/p15-uv-cache uv run --directory backend pytest tests/unit/test_confidentiality_policy.py tests/unit/test_grounded_generation.py -q --no-cov` passed 26 tests.
+- Ruff format/check and strict mypy passed for 87 backend source/test files.
+- Final `UV_CACHE_DIR=/tmp/p15-final-uv-cache make verify` passed with 138 backend unit tests at 90.68% domain coverage, 13 frontend tests, 4 integration tests with 10 skips, and 101 security tests with 7 skips. Markdown lint passed 94 files and prompt integrity passed 18 archived prompts.
+- `UV_CACHE_DIR=/tmp/p15-release-uv-cache make verify-release` passed with elevated access for the pinned ShellCheck and Trivy containers, dependency audits, secret scanning, SBOM generation, Docker BuildKit checks, and all fast gates.
+- The P15 tests cover internal Product evidence exclusion, approved customer-shareable evidence, Legal-only non-disclosure, missing metadata denial, classification changes on the next request, internal classification warnings, and share-policy failure without a model call.
