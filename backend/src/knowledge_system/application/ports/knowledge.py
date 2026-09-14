@@ -21,6 +21,11 @@ from knowledge_system.domain.evidence import (
     EvidenceResolutionInput,
     RerankScore,
 )
+from knowledge_system.domain.generation import (
+    AuthorizedGenerationContext,
+    GenerationTrace,
+    ModelDraft,
+)
 from knowledge_system.domain.retrieval import EffectiveSearchFilter, RetrievalCandidate
 
 # These aliases keep the original architecture vocabulary while the richer P10
@@ -111,6 +116,26 @@ class LLM(Protocol):
     """Generates from an explicitly supplied authorized context."""
 
     def generate(self, query: str, context: Sequence[AuthorizedChunk]) -> str: ...
+
+
+class GroundedLLM(Protocol):
+    """Produces schema-first drafts from one already-authorized evidence package."""
+
+    @property
+    def model_id(self) -> str: ...
+
+    @property
+    def model_version(self) -> str: ...
+
+    def generate(
+        self, context: AuthorizedGenerationContext, *, retry: bool
+    ) -> ModelDraft: ...
+
+
+class GenerationTraceSink(Protocol):
+    """Records content-free model/citation trace metadata."""
+
+    def record(self, trace: GenerationTrace) -> None: ...
 
 
 class AuditSink(Protocol):

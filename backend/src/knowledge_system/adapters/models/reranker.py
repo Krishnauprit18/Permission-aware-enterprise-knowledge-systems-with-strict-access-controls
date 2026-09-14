@@ -30,7 +30,9 @@ class SemanticRerankerConfig:
     """Pinned local artifact settings; network loading is intentionally disabled."""
 
     model_name: str = "Xenova/ms-marco-MiniLM-L-6-v2"
-    model_version: str = "a09144355adeed5f58c8ed011d209bf8ee5a1fec"  # pragma: allowlist secret
+    model_version: str = (
+        "a09144355adeed5f58c8ed011d209bf8ee5a1fec"  # pragma: allowlist secret
+    )
     cache_dir: Path = Path("/var/lib/knowledge-system/models")
     batch_size: int = 16
     threads: int = 1

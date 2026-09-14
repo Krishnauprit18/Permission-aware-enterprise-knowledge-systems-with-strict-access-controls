@@ -51,7 +51,9 @@ re-embedding.
 - Prompt configuration references evidence schema, output schema, citation
   contract, and compatible model-adapter capabilities.
 - Prompts contain no secrets or authorization decisions. Retrieved text is
-  inserted only in the delimited evidence-data section.
+  inserted only in the delimited evidence-data section. P14's trusted prompt is
+  `grounded-answer:v1`; its SHA-256 is recorded in every `GenerationTrace` and
+  changes only with a new prompt version.
 - Traces record prompt purpose/version/hash without storing complete protected
   context by default.
 
@@ -89,7 +91,8 @@ Readers reject unknown incompatible versions rather than guessing.
 ## 8. Pipeline component version
 
 Connector, parser, normalizer, ACL mapper, classifier, chunker, evidence resolver,
-citation validator, and policy-warning components expose immutable versions.
+citation validator, generation prompt, local model adapter, and policy-warning
+components expose immutable versions.
 Ingestion checkpoints record all versions that influence a derivative. A
 behavior-changing version can schedule deterministic replay/reindex without
 rewriting source history.

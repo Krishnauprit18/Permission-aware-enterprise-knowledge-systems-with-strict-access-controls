@@ -7,6 +7,7 @@ from collections import Counter, defaultdict
 from collections.abc import Sequence
 from dataclasses import dataclass, field, replace
 from datetime import UTC
+from hashlib import sha256
 from time import monotonic
 
 from knowledge_system.application.content import normalize_untrusted_text
@@ -192,7 +193,7 @@ class DeterministicEvidenceResolver:
                 supersedes_document_ids=policy.supersedes_document_ids,
                 superseded_by_document_ids=policy.superseded_by_document_ids,
                 annotations=tuple(annotations),
-                authorization_fingerprint=candidate.authorization.decision_fingerprint,
+                authorization_fingerprint=authorization_fingerprint,
                 diagnostics=EvidenceRankDiagnostics(
                     retrieval_rank=item.retrieval_rank,
                     rerank_rank=item.rerank_rank,
@@ -440,12 +441,35 @@ class EvidenceResolutionService:
         return self.resolver.resolve(
             inputs,
             correlation_id=principal.correlation_id,
-            authorization_fingerprint=retrieval.trace.authorization_fingerprint,
+            authorization_fingerprint=self._current_authorization_fingerprint(
+                reauthorized,
+                fallback=retrieval.trace.authorization_fingerprint,
+            ),
             reranker_version=self.reranker.reranker_version,
             input_candidate_count=len(selected),
             reauthorized_candidate_count=len(reauthorized),
             authorization_drop_count=authorization_drops,
         )
+
+    @staticmethod
+    def _current_authorization_fingerprint(
+        candidates: Sequence[RetrievalCandidate], *, fallback: str
+    ) -> str:
+        """Bind P13 packets to the current per-resource reauthorization pass."""
+
+        if not candidates:
+            return fallback
+        fingerprints = tuple(
+            sorted(
+                {
+                    candidate.authorization.decision_fingerprint
+                    for candidate in candidates
+                }
+            )
+        )
+        if not all(fingerprint.strip() for fingerprint in fingerprints):
+            raise EvidenceAuthorizationError("authorized evidence unavailable")
+        return sha256("|".join(fingerprints).encode("utf-8")).hexdigest()
 
     def _reauthorize(
         self,

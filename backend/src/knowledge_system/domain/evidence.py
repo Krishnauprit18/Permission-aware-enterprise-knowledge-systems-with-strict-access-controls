@@ -257,6 +257,15 @@ class EvidenceResolution:
     most_authoritative_evidence_id: EvidenceId | None
     trace: EvidenceResolutionTrace
 
+    def __post_init__(self) -> None:
+        if any(
+            packet.authorization_fingerprint != self.trace.authorization_fingerprint
+            for packet in self.packets
+        ):
+            raise EvidenceResolutionError(
+                "evidence packets must share the current authorization binding"
+            )
+
 
 def stable_evidence_id(chunk_id: str, document_version_id: str) -> EvidenceId:
     """Create a citation-stable ID without binding it to a user or query."""

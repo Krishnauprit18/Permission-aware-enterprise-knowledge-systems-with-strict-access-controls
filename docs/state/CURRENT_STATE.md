@@ -3,10 +3,10 @@
 ## Snapshot
 
 - Last updated: 2026-09-14
-- Current phase: `P13R`
+- Current phase: `P14`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, P12 provides permission-first hybrid retrieval, and P13/P13R provide bounded local semantic reranking plus deterministic evidence resolution with canonical PostgreSQL/MinIO text reconstruction; context construction, citation validation, external sharing, and generation remain unimplemented.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, P12 provides permission-first hybrid retrieval, P13/P13R provide bounded local semantic reranking plus deterministic evidence resolution with canonical PostgreSQL/MinIO text reconstruction, and P14 provides structured local grounded-generation/citation validation; external sharing remains unimplemented.
 - Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`, P13 implementation `9fca6df`, P13 docs checkpoint `c7f5a4a`, P13R implementation `03284ae`.
 
 ## Established invariants
@@ -197,4 +197,26 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - R-042 and R-043 are mitigated. This is not a full P13/P12 end-to-end claim: R-041 tracks the live filtered OpenSearch vector incompatibility, while R-036 retains the required broader semantic-quality evaluation.
 - P13R implementation checkpoint `03284ae` (`fix(P13R): wire canonical evidence and semantic reranking`) is pushed to `origin/master`.
 
-Next authorized phase: P14 only after an explicit P14 prompt.
+## P14 grounded generation and citation integrity
+
+- P14 composes only a P13 `EvidenceResolution` whose packets share a current
+  reauthorization fingerprint. It builds deterministic bounded data-only
+  context, invokes a typed local-only structured model port, validates every
+  evidence ID and exact quote, and maps citation display metadata from backend
+  packets alone.
+- Invalid citation proposals receive one bounded retry; repeated invalid
+  proposals safely refuse. Empty context refuses without a model call. Model
+  timeout, malformed output, unavailable runtime, or concurrency exhaustion
+  returns a generic unavailable response without claims or evidence metadata.
+- Prompt/model/version IDs, evidence IDs, validation outcome, budget, timing,
+  correlation ID, and current authorization binding are emitted through the
+  content-free `GenerationTrace` sink port.
+- Focused boundary tests and Markdown lint pass. Final `make verify` passed
+  after the loopback proxy hardening. `make verify-release` also passed for
+  the P14 implementation before that final one-line hardening change; the
+  hardening is covered by the final fast gate. A local Ollama runtime was not
+  present at `127.0.0.1:11434`, so no live local-model acceptance was run; this
+  remains R-044. The P14 implementation and documentation checkpoint is
+  recorded in the phase commits below.
+
+Next authorized phase: P15 only after an explicit P15 prompt.

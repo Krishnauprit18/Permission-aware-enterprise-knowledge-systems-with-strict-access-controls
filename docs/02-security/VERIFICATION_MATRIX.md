@@ -30,8 +30,8 @@ This matrix defines planned engineering verification guidance. It does not claim
 | Embeddings and search index | Offline-provider tests, bounded batches/timeouts/retries, model/version/dimension checks, strict BM25/vector mapping, alias cutover, metadata propagation, deletion, and private-endpoint tests | FR-RETRIEVE-001/002; T-04/T-11/T-15/T-19/T-49/T-50/T-51 |
 | Retrieval, reranking, and vectors | Lexical/semantic isolation tests, pre-rerank authorization instrumentation, vector-probing tests | FR-RETRIEVE-001/002; INV-AUTHZ-001; T-04/T-19 |
 | Authority, freshness, and conflict | Revision, effective-time, supersession, poisoning, and refusal fixtures | FR-EVIDENCE-001; T-09 |
-| Grounded generation and citations | Claim-to-evidence validator tests, fabricated-ID tests, malformed-output tests, refusal tests | FR-ANSWER-001/002; INV-CITE-001; T-08/T-20/T-21 |
-| Prompt-injection resilience | Direct and indirect injection corpus, source-text delimiting, no-policy-change assertions | INV-PROMPT-001; T-08 |
+| Grounded generation and citations | Structured claim-to-evidence/quote validator tests, fabricated-ID retry/refusal tests, backend-only citation metadata tests, malformed-output tests, safe refusal/error tests | FR-ANSWER-001/002; INV-CITE-001; T-08/T-20/T-21/T-62/T-64/T-65 |
+| Prompt-injection resilience | Direct and indirect injection corpus, data-only source-text delimiting, static-system-prompt/no-tool assertions | INV-PROMPT-001; T-08/T-63 |
 | Revocation, updates, deletion | Bounded lag tests for hourly updates, ACL changes, de-permissioning, deletion, derivatives, and caches | FR-UPDATE-001/002; FR-DELETE-001; T-15/T-18 |
 | Traces and logs | Structured schema, redaction, access-control, secret-scan, and canary tests | FR-TRACE-001; T-03/T-12 |
 | Local operations and supply chain | Dependency review, SBOM, artifact integrity, source/build provenance, restore and rollback evidence | T-05/T-11/T-17 |

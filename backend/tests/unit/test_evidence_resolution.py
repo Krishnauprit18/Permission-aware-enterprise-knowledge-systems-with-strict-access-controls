@@ -445,8 +445,9 @@ def test_reauthorization_blocks_revoked_candidate_before_text_load_and_output() 
     assert store.loaded_chunk_ids == [approved.chunk_id]
     assert [packet.chunk_id for packet in resolution.packets] == [approved.chunk_id]
     assert resolution.trace.authorization_drop_count == 1
+    assert resolution.trace.authorization_fingerprint != "fingerprint-p13"
     assert all(
-        packet.authorization_fingerprint == "fingerprint-p13"
+        packet.authorization_fingerprint == resolution.trace.authorization_fingerprint
         for packet in resolution.packets
     )
 
