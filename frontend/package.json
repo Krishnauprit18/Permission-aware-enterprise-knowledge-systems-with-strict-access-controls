@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:unit": "vitest run --coverage",
+    "test:e2e": "playwright test",
     "test": "npm run test:unit"
   },
   "dependencies": {
@@ -19,11 +20,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
+    "@playwright/test": "^1.55.0",
     "@testing-library/react": "^16.3.0",
-    "@vitest/coverage-v8": "^3.2.4",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.2",
+    "@vitest/coverage-v8": "^3.2.4",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^16.3.0",
