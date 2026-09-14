@@ -11,3 +11,4 @@ System boundaries, typed contracts, data flow, storage, source adapters, retriev
 - `DATA_MODEL.md` defines canonical PostgreSQL entities, lifecycle, stable IDs, and authority boundaries.
 - `ARCHITECTURE_REVIEW.md` records the P02 invariant, pipeline, dependency, deployment, and residual-risk review.
 - `PERMISSION_FIRST_RETRIEVAL.md` defines the P12 authorization-first query ordering, immutable filter construction, hybrid candidate paths, and ListObjects scale boundary.
+- `RERANKING_AND_EVIDENCE_RESOLUTION.md` defines the P13 post-retrieval authorization re-check, bounded local reranking, deterministic policy metadata, and evidence packet contract.

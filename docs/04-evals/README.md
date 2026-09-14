@@ -13,3 +13,7 @@ corpus, its evidence timeline, OpenFGA tuple inputs, and validation contract.
 
 `RETRIEVAL_EVALUATION.md` documents the P12 retrieval-only evaluation hook and
 keeps retrieval metrics separate from future generation evaluation.
+
+`EVIDENCE_RESOLUTION_EVALUATION.md` documents P13 deterministic authority,
+freshness, conflict, lineage, and authorization-boundary assertions separately
+from retrieval and generation quality.

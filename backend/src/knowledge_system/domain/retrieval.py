@@ -197,6 +197,7 @@ class RetrievalCandidate:
     updated_at: datetime
     authorization: AuthorizationDecision
     provenance: Mapping[str, str] = field(default_factory=dict)
+    external_shareable: bool = False
 
     def __post_init__(self) -> None:
         if (
@@ -318,6 +319,8 @@ def candidate_from_envelope(
         updated_at=updated_at.astimezone(UTC),
         authorization=decision,
         provenance=provenance,
+        external_shareable=provenance.get("external_shareable", "false").lower()
+        == "true",
     )
 
 

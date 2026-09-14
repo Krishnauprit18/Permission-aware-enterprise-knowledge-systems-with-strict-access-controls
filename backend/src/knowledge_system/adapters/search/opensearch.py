@@ -337,7 +337,9 @@ class OpenSearchIndexAdapter:
             "account_ids",
             "department",
             "classification",
+            "external_shareable",
             "citation_locators",
+            "ordinal",
             "updated_at",
             "source_url",
             "author",
@@ -439,8 +441,10 @@ class OpenSearchIndexAdapter:
             "author": str(source.get("author", "")),
             "language": str(source.get("language", "")),
             "authority_level": str(source.get("authority_level", "")),
+            "external_shareable": str(source.get("external_shareable", False)).lower(),
             "status": str(source.get("status", "")),
             "acl_relationship_refs": "\x1f".join(acl_refs),
+            "ordinal": str(source.get("ordinal", "")),
         }
         return CandidateEnvelope(
             object_id=AuthorizedObjectId(f"resource:{document_id}"),

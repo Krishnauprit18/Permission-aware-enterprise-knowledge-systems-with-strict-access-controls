@@ -246,17 +246,36 @@ type. Unavailable or inconsistent state is `INDETERMINATE` and fails closed.
 
 ```python
 class Reranker(Protocol):
-    reranker_version: str
+    @property
+    def reranker_version(self) -> str: ...
 
-    async def rerank(
+    def rerank(
         self,
         query: str,
         chunks: Sequence[AuthorizedChunk],
-    ) -> Sequence["RankedAuthorizedChunk"]: ...
+        *,
+        limit: int,
+        timeout_ms: int,
+    ) -> Sequence["RerankScore"]: ...
 ```
 
 Contract: configured local default; accepts authorized text only; cannot add
-candidates or alter policy metadata.
+candidates or alter policy metadata. P13 treats unknown/duplicate returned IDs
+as a safe fallback condition, never as new evidence.
+
+### Evidence content store
+
+```python
+class EvidenceContentStore(Protocol):
+    def load(
+        self,
+        candidates: Sequence[RetrievalCandidate],
+    ) -> Sequence["EvidenceMaterial"]: ...
+```
+
+Contract: reads source text only for the application reauthorized candidate
+subset and returns trusted lifecycle/authority/freshness metadata with it. It
+cannot search, enumerate, accept client IDs, or grant access.
 
 ### LLM
 
@@ -282,13 +301,13 @@ class EvidenceResolver(Protocol):
 
     def resolve(
         self,
-        chunks: Sequence["RankedAuthorizedChunk"],
-        at: datetime,
+        inputs: Sequence["EvidenceResolutionInput"],
     ) -> "EvidenceResolution": ...
 ```
 
 Contract: deterministic authority, freshness, supersession, conflict, and
-sufficiency result. It cannot fetch new content or broaden authorization.
+sufficiency result. It cannot fetch new content, interpret source text as
+policy, or broaden authorization.
 
 ### Audit sink
 
