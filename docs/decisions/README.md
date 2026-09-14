@@ -8,3 +8,4 @@ Material decisions are recorded as numbered ADRs. Historical chat is not an auth
 - P05 accepted decision: browser Authorization Code + S256 PKCE with memory-only access tokens and independently validated backend identities in `ADR-011-browser-authorization-code-pkce.md`.
 - P06 accepted decision: OpenFGA schema 1.1 relationship model with application-side tenant/classification enforcement, explicit restricted access, separate external sharing, and versioned decision fingerprints in `ADR-012-openfga-authorization-model-v1.md`.
 - P07 accepted decision: normalized PostgreSQL canonical metadata with explicit checksum-verified migrations, typed transactions, stable identities, and durable tombstones in `ADR-013-canonical-postgresql-data-model.md`.
+- P15 accepted decision: deterministic confidentiality filtering before generation with separate view/share decisions in `ADR-017-deterministic-confidentiality-policy.md`.

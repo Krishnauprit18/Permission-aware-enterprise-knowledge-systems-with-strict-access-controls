@@ -91,8 +91,9 @@ Readers reject unknown incompatible versions rather than guessing.
 ## 8. Pipeline component version
 
 Connector, parser, normalizer, ACL mapper, classifier, chunker, evidence resolver,
-citation validator, generation prompt, local model adapter, and policy-warning
-components expose immutable versions.
+citation validator, generation prompt, local model adapter, confidentiality
+policy, and policy-warning components expose immutable versions. The P15
+confidentiality policy component is `confidentiality-policy-v1`.
 Ingestion checkpoints record all versions that influence a derivative. A
 behavior-changing version can schedule deterministic replay/reindex without
 rewriting source history.

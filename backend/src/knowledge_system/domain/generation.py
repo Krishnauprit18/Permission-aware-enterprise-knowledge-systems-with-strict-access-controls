@@ -17,6 +17,7 @@ from knowledge_system.domain.evidence import (
     EvidenceFreshness,
 )
 from knowledge_system.domain.persistence import Classification
+from knowledge_system.domain.policy import AnswerMode, PolicyStatus, PolicyWarning
 
 
 class GenerationContractError(ValueError):
@@ -296,6 +297,9 @@ class GroundedAnswer:
     conflicts: tuple[ConflictNotice, ...]
     qualifications: tuple[EvidenceQualification, ...]
     trace: GenerationTrace
+    answer_mode: AnswerMode = AnswerMode.INTERNAL
+    policy_status: PolicyStatus = PolicyStatus.ALLOW
+    policy_warnings: tuple[PolicyWarning, ...] = ()
 
     def __post_init__(self) -> None:
         if not self.message.strip():

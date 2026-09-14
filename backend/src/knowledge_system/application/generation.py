@@ -36,6 +36,7 @@ from knowledge_system.domain.generation import (
     ValidatedCitation,
     conflict_notices,
 )
+from knowledge_system.domain.policy import AnswerMode, PolicyStatus, PolicyWarning
 
 
 class UnauthorizedEvidenceContextError(GenerationContractError):
@@ -326,6 +327,28 @@ class GroundedGenerationService:
             started=started,
         )
 
+    def policy_unavailable(
+        self,
+        *,
+        mode: AnswerMode,
+        warning: PolicyWarning,
+    ) -> GroundedAnswer:
+        """Return a generic protected-path error without constructing context."""
+
+        started = monotonic()
+        return self._finalize(
+            context=None,
+            outcome=GenerationOutcome.UNAVAILABLE,
+            message="The answer service is temporarily unavailable.",
+            claims=(),
+            validation=CitationValidationStatus.NOT_ATTEMPTED,
+            attempts=0,
+            started=started,
+            answer_mode=mode,
+            policy_status=PolicyStatus.UNAVAILABLE,
+            policy_warnings=(warning,),
+        )
+
     def _finalize(
         self,
         *,
@@ -336,6 +359,9 @@ class GroundedGenerationService:
         validation: CitationValidationStatus,
         attempts: int,
         started: float,
+        answer_mode: AnswerMode = AnswerMode.INTERNAL,
+        policy_status: PolicyStatus = PolicyStatus.ALLOW,
+        policy_warnings: tuple[PolicyWarning, ...] = (),
     ) -> GroundedAnswer:
         if context is None:
             prompt = self.context_builder.prompt
@@ -390,6 +416,9 @@ class GroundedGenerationService:
             conflicts=conflicts,
             qualifications=qualifications,
             trace=trace,
+            answer_mode=answer_mode,
+            policy_status=policy_status,
+            policy_warnings=policy_warnings,
         )
         try:
             self.trace_sink.record(trace)

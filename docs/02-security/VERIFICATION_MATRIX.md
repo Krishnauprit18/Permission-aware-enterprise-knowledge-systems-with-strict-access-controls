@@ -25,7 +25,7 @@ This matrix defines planned engineering verification guidance. It does not claim
 |---|---|---|
 | Authentication and session binding | Identity/session threat tests, invalid-session tests, privileged-action audit evidence | FR-AUTH-001; T-01 |
 | Tenant and account isolation | Cross-tenant/account authorization matrix; model-boundary canary tests; cache tests | FR-AUTHZ-001/002; INV-TENANT-001; T-04/T-06/T-15 |
-| View versus external share | Separate policy decision tests for internal, customer, and restricted audiences; redaction/refusal evidence | FR-AUTHZ-003; T-10 |
+| View versus external share | Separate P15 policy selection tests for internal, customer, and restricted audiences; pre-context exclusion, redaction/refusal evidence, warning/status contract, and missing-metadata denial | FR-AUTHZ-003; T-10/T-33/T-66/T-67/T-68 |
 | Ingestion, parsing, attachments | Connector path/type/size/hash/duplicate checks, provenance, retry/checkpoint ordering, source-aware parser bounds, Unicode/active-content handling, ACL/classification propagation, locator reconstruction, SSRF, malformed-file, attachment quarantine, and deletion tests | FR-INGEST-001/002; T-07/T-13/T-14/T-42/T-43/T-44/T-45/T-46/T-47/T-48 |
 | Embeddings and search index | Offline-provider tests, bounded batches/timeouts/retries, model/version/dimension checks, strict BM25/vector mapping, alias cutover, metadata propagation, deletion, and private-endpoint tests | FR-RETRIEVE-001/002; T-04/T-11/T-15/T-19/T-49/T-50/T-51 |
 | Retrieval, reranking, and vectors | Lexical/semantic isolation tests, pre-rerank authorization instrumentation, vector-probing tests | FR-RETRIEVE-001/002; INV-AUTHZ-001; T-04/T-19 |
