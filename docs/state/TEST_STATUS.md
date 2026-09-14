@@ -155,3 +155,10 @@
 - Prompt-integrity evidence: `scripts/verify-prompt-integrity.sh` passed all 14 archived phase prompt hashes, including the repaired P01/P02 entries and the new P12 archive.
 - Live P12 OpenSearch evidence is pending environment access: the opt-in live filtered BM25/vector candidate test was skipped because Docker access was denied and the previously configured private OpenSearch endpoint was unreachable. Unit/fake-transport coverage passed; no live OpenSearch claim is made for P12.
 - Tooling note: the default Semgrep gate now uses the checked-in offline security ruleset and temporary local settings/cache, so the fast gate is deterministic without hosted presets or writable home-directory assumptions.
+
+## P13
+
+- Focused evidence-resolution evidence: `UV_CACHE_DIR=/tmp/p13-uv-cache uv run --directory backend pytest tests/unit/test_evidence_resolution.py -q --no-cov` passed 7 tests. Coverage includes the August historical target, tentative internal plan, approved release-board decision, informal engineering concern, explicit supersession, duplicate collapse, authorization re-check before text load, malformed reranker output, fallback order, text sanitization, and fail-closed lifecycle/shareability validation.
+- Security subset: `UV_CACHE_DIR=/tmp/p13-uv-cache uv run --directory backend pytest -m security --no-cov` passed 56 tests with 5 existing platform skips. P13 tests are included in this subset.
+- Fast gate: `UV_CACHE_DIR=/tmp/p13-uv-cache make verify` passed. Backend unit tests passed 100 selected tests with 90.42% measured domain coverage; frontend tests passed 13 tests with 98.87% configured coverage; integration passed 4 tests with 8 existing PostgreSQL/OpenSearch skips; security passed 56 tests with 5 skips. Ruff, strict mypy, TypeScript, Markdown lint, Bandit, offline Semgrep, dataset validation, and all 15 archived prompt hashes passed.
+- No production persistence-backed evidence-content-store or live P13 OpenSearch/OpenFGA integration was executed. The core P13 boundary is covered by typed in-memory test fixtures; this limitation is recorded in the risk register.

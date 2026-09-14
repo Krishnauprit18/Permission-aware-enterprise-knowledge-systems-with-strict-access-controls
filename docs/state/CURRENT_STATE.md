@@ -2,12 +2,12 @@
 
 ## Snapshot
 
-- Last updated: 2026-09-13
-- Current phase: `P12`
+- Last updated: 2026-09-14
+- Current phase: `P13`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
-- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, and P12 provides permission-first hybrid retrieval through authorized metadata-only candidates; reranking, evidence resolution, and generation remain unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`.
+- Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, P12 provides permission-first hybrid retrieval, and P13 provides bounded local reranking plus deterministic evidence resolution; context construction, citation validation, external sharing, and generation remain unimplemented.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`, P13 implementation `9fca6df`.
 
 ## Established invariants
 
@@ -180,4 +180,13 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
 - P12 evidence: `make verify` passed with 93 backend unit tests at 91.59% domain coverage, 13 frontend tests at 98.87%, 4 integration tests passed with 8 skips, and 49 security tests passed with 5 skips. The new live OpenSearch filter test was not run because Docker access/private endpoint was unavailable in this session.
 - P12 commits: `a927cb9` (`feat(P12): implement permission-first hybrid retrieval`), `fb10e3d` (`fix(P12): stabilize local verification gates`), and `51d68bf` (`docs(P12): record retrieval checkpoint`) are pushed to `origin/master`.
 
-Next authorized phase: P13 only after an explicit P13 prompt.
+## P13 reranking and evidence-resolution baseline
+
+- `EvidenceResolutionService` consumes only P12 `RetrievalResult` candidates, re-checks current `can_view` before text loading, validates content-store identity/tenant/version matches, and fails closed on authorization or content-store errors.
+- `LocalPairwiseReranker` is a bounded local pair scorer and cannot retrieve, enumerate, or admit candidates. Explicit timeout/unavailable/invalid-ID paths retain the already-authorized P12 order with an internal fallback marker.
+- `DeterministicEvidenceResolver` relies on typed trusted `EvidencePolicyMetadata`, never source text or a model, for authority, effective time, lifecycle, status, conflict, and lineage policy. It keeps relevance and authority decisions separate.
+- `EvidencePacket` holds a stable evidence identity, sanitized text, source locator/URL, timestamps, source/version/authority/freshness/status, classification/shareability, annotations, authorization fingerprint, and trace-only ranking reasons.
+- P13 evidence: `make verify` passed with 100 backend unit tests at 90.42% domain coverage, 13 frontend tests at 98.87%, 4 integration tests passed with 8 skips, and 56 security tests passed with 5 skips.
+- P13 implementation commit: `9fca6df` (`feat(P13): add evidence resolution`) is pushed to `origin/master`.
+
+Next authorized phase: P14 only after an explicit P14 prompt.
