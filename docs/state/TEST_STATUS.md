@@ -220,13 +220,13 @@
 ## P17
 
 - Focused P17 evidence: `UV_CACHE_DIR=/tmp/p17-uv-cache uv run --directory
-  backend pytest -m 'unit or security' --no-cov -q` passed 155 tests with 8
+  backend pytest -m 'unit or security' --no-cov -q` passed 156 tests with 8
   expected skips and 5 deselected. Coverage includes content-free query audit
   records, pseudonymous subjects, safe authz denial events, login/logout
   events, ingestion lifecycle events, connector and query spans, telemetry
   outage behavior, and domain bound validation.
 - Fast gate: `UV_CACHE_DIR=/tmp/p17-verify-cache make verify` passed. Backend
-  unit tests passed 148 selected tests at 90.18% measured domain coverage;
+  unit tests passed 149 selected tests at 90.18% measured domain coverage;
   frontend Vitest passed 15 tests; integration passed 9 tests with 11 expected
   platform/live skips; security passed 106 tests with 8 expected skips.
   Ruff, strict mypy, TypeScript, Markdown lint, prompt integrity, dataset

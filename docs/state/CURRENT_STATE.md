@@ -290,7 +290,7 @@ record product API and UI checkpoint`) are pushed to `origin/master`.
   nested API/query/evidence/generation spans, connector/ingestion spans, and
   bounded counters. Jaeger, Prometheus, collector health, and safe PromQL
   queries are documented in `docs/05-operations/OBSERVABILITY.md`.
-- P17 evidence: `make verify` passed with 148 backend unit tests at 90.18%
+- P17 evidence: `make verify` passed with 149 backend unit tests at 90.18%
   domain coverage, 15 frontend tests, 9 integration tests with 11 expected
   skips, 106 security tests with 8 expected skips, strict typing, Markdown and
   prompt-integrity checks. `make verify-release` passed dependency/npm audits,
