@@ -302,7 +302,8 @@ record product API and UI checkpoint`) are pushed to `origin/master`.
   than an authorization allow.
 
 P17 implementation checkpoint `e59f3d6` (`feat(P17): add auditability and
-observability`) is pushed to `origin/master`. The documentation checkpoint and
-final state-reference commit follow after this ledger update.
+observability`) and documentation checkpoint `7ed4d24` (`docs(P17): record
+observability checkpoint`) are pushed to `origin/master`. A final state-reference
+commit records these exact checkpoint hashes.
 
-Next authorized phase: P17 only after an explicit P17 prompt.
+Next authorized phase: only after an explicit next-phase prompt.
