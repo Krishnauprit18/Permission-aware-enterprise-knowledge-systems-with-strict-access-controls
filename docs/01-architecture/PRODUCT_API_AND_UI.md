@@ -49,10 +49,14 @@ diagnostics.
 
 ## Composition status
 
-P16 adds the typed `QueryAnswerService` port and HTTP/UI boundary. The default
-API composition root intentionally does not invent a demo answer or silently
-construct a partial pipeline: when a production query service is not injected,
-the protected request fails closed. Integration tests inject a complete typed
-answer to prove the contract. Wiring the live P12-P15 adapters, persistence
-repositories, and local model runtime into this port remains an explicit
-composition/integration task; the UI cannot bypass that boundary.
+P16 adds the typed `QueryAnswerService` port, the
+`KnowledgeQueryApplication` stage-order orchestrator, and the HTTP/UI boundary.
+The orchestrator accepts injected retrieval, evidence, and generation ports and
+always invokes them in that protected order. The default API composition root
+intentionally does not invent a demo answer or silently construct a partial
+pipeline: when a production query service is not injected, the protected
+request fails closed. Integration tests inject a complete typed answer to prove
+the contract, while the application unit test proves stage ordering. Wiring the
+live P12-P15 adapters, persistence repositories, and local model runtime into
+this port remains an explicit composition/integration task; the UI cannot
+bypass that boundary.

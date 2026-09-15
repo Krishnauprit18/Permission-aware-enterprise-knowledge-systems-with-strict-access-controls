@@ -2,12 +2,12 @@
 
 ## Snapshot
 
-- Last updated: 2026-09-14
-- Current phase: `P15`
+- Last updated: 2026-09-15
+- Current phase: `P16`
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
 - Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, P12 provides permission-first hybrid retrieval, P13/P13R provide bounded local semantic reranking plus deterministic evidence resolution with canonical PostgreSQL/MinIO text reconstruction, P14 provides structured local grounded-generation/citation validation, and P15 provides deterministic internal/customer-safe policy selection; external sharing transport remains unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`, P13 implementation `9fca6df`, P13 docs checkpoint `c7f5a4a`, P13R implementation `03284ae`, P14 implementation `ee83c48`, P15 implementation `dc4f634`, P15 docs checkpoint `fa72aa3`.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`, P13 implementation `9fca6df`, P13 docs checkpoint `c7f5a4a`, P13R implementation `03284ae`, P14 implementation `ee83c48`, P15 implementation `dc4f634`, P15 docs checkpoint `fa72aa3`, P16 implementation `765945e`, P16 orchestration fix `64900a0`.
 
 ## Established invariants
 
@@ -219,8 +219,6 @@ Read `AGENTS.md`, this file, the active phase plan, and only relevant documents 
   remains R-044. The P14 implementation and documentation checkpoint is
   recorded in the phase commits below.
 
-Next authorized phase: P16 only after an explicit P16 prompt.
-
 ## P15 confidentiality policy and customer-safe mode
 
 - P15 adds a typed `AnswerMode`, machine-readable `PolicyStatus`, fixed warning
@@ -244,3 +242,35 @@ Next authorized phase: P16 only after an explicit P16 prompt.
 P15 implementation checkpoint `dc4f634` (`feat(P15): add deterministic
 confidentiality policy`) and documentation checkpoint `fa72aa3` (`docs(P15):
 record confidentiality policy checkpoint`) are pushed to `origin/master`.
+
+## P16 product API and evidence-first web UI
+
+- Added the typed `QueryAnswerService` port, the `KnowledgeQueryApplication`
+  orchestrator, and versioned `POST
+  /api/v1/knowledge/query` contract. Requests are bounded and reject unknown
+  fields; the backend accepts no client ACL/search filters. OpenAPI includes
+  the success and structured unavailable/error models.
+- The API authenticates through the existing OIDC dependency, binds the
+  request-generated correlation ID to the server-owned principal, and projects
+  only validated grounded claims, backend citations/excerpts, policy warnings,
+  conflict/freshness qualifications, and safe trace metadata. Missing query
+  composition fails closed with a generic 503.
+- Added CSP/security headers, loopback-local CORS defaults, generic validation
+  errors, and a React UI with in-memory history, Internal/Customer-Safe mode,
+  refusal/warning/conflict/staleness states, citations, and provenance without
+  chain-of-thought. Retrieved text is rendered as plain React text.
+- Added the protected stage-order unit regression, Vitest/API-client coverage,
+  backend API/security contract coverage, and
+  a Chromium Playwright login -> query -> citation flow with route-controlled
+  local identity/API responses. No bearer token is stored in localStorage.
+- The live P12-P15 adapter composition remains intentionally unconfigured at
+  the default API root; the boundary returns unavailable rather than inventing
+  answers. R-045 is mitigated for the API contract but the live composition
+  remains a future integration task.
+
+P16 implementation checkpoint `765945e` (`feat(P16): add product API and
+evidence workspace`) and orchestration fix `64900a0` (`fix(P16): wire protected
+query orchestration`) are pushed to `origin/master`. The documentation
+checkpoint follows after this state/archive update.
+
+Next authorized phase: P17 only after an explicit P17 prompt.

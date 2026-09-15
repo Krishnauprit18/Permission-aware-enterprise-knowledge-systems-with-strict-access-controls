@@ -186,3 +186,33 @@
 - Final `UV_CACHE_DIR=/tmp/p15-final-uv-cache make verify` passed with 138 backend unit tests at 90.68% domain coverage, 13 frontend tests, 4 integration tests with 10 skips, and 101 security tests with 7 skips. Markdown lint passed 94 files and prompt integrity passed 18 archived prompts.
 - `UV_CACHE_DIR=/tmp/p15-release-uv-cache make verify-release` passed with elevated access for the pinned ShellCheck and Trivy containers, dependency audits, secret scanning, SBOM generation, Docker BuildKit checks, and all fast gates.
 - The P15 tests cover internal Product evidence exclusion, approved customer-shareable evidence, Legal-only non-disclosure, missing metadata denial, classification changes on the next request, internal classification warnings, and share-policy failure without a model call.
+
+## P16
+
+- Focused backend API evidence: `UV_CACHE_DIR=/tmp/p16-uv-cache uv run
+  --directory backend pytest tests/integration/test_product_api.py -q --no-cov`
+  passed 5 tests. Coverage includes backend citation projection, policy mode
+  propagation, generic fail-closed unavailable behavior, bounded validation,
+  security headers, and OpenAPI success/error schemas.
+- Protected composition evidence: `UV_CACHE_DIR=/tmp/p16-uv-cache uv run
+  --directory backend pytest tests/unit/test_query_application.py -q --no-cov`
+  passed 1 test. The regression asserts retrieval completes before evidence
+  resolution and generation, including Customer-Safe mode propagation.
+- Frontend fast evidence: `npm --prefix frontend run fmt:check`, strict
+  TypeScript, ESLint, and Vitest passed 15 tests at 93.10% statements/lines,
+  93.33% functions, and 85.08% branches. Tests cover the typed API client,
+  signed-out/authenticated UI, mode submission, warnings, provenance, request
+  IDs, and XSS-safe text rendering.
+- Browser evidence: `npm --prefix frontend run test:e2e` passed 1 Chromium test
+  in 1.7 seconds. The route-controlled local flow covered PKCE callback,
+  memory-only token exchange, authenticated query, citation/provenance view,
+  and request ID rendering. It is browser-contract evidence, not a live
+  Keycloak/OpenFGA/model acceptance claim.
+- Markdown lint passed 98 authored files with zero errors. Backend Ruff format,
+  Ruff lint, and strict mypy passed after the API and orchestration additions.
+- Release evidence: `UV_CACHE_DIR=/tmp/p16-release-uv-cache make
+  verify-release` passed with elevated local Docker access. Runtime dependency
+  audit and npm production audit passed, detect-secrets passed, backend and
+  frontend SBOMs were generated, pinned ShellCheck and Trivy fallbacks passed,
+  and Docker BuildKit checks passed. The Playwright Chromium binary is a local
+  operator artifact and is not committed to the repository.
