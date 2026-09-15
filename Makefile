@@ -10,7 +10,7 @@ SHELLCHECK_IMAGE := koalaman/shellcheck:stable@sha256:b9389b73c8f26f710a7171cb7d
 TRIVY_IMAGE := aquasec/trivy:0.56.2@sha256:9aebdee5e85129a1bdd9977676baa6cf0579195fc4809570cc9dd55f6e92863c
 SEMGREP_SCAN := SEMGREP_SETTINGS_FILE="$${TMPDIR:-/tmp}/knowledge-system-semgrep-settings.yml" SEMGREP_LOG_FILE="$${TMPDIR:-/tmp}/knowledge-system-semgrep.log" SEMGREP_VERSION_CACHE_PATH="$${TMPDIR:-/tmp}/knowledge-system-semgrep-version" SEMGREP_SEND_METRICS=off semgrep --disable-version-check --config security/semgrep.yml
 
-.PHONY: bootstrap fmt lint lint-docs prompt-integrity dataset-validate typecheck test test-unit test-integration \
+.PHONY: bootstrap fmt lint lint-docs prompt-integrity dataset-validate eval typecheck test test-unit test-integration \
  test-security sbom scan container-lint container-scan architecture-test verify verify-release reindex-demo \
  shellcheck platform-config platform-status keycloak-bootstrap openfga-bootstrap db-migrate db-schema-doc up down reset-demo seed-demo
 
@@ -37,6 +37,13 @@ prompt-integrity:
 
 dataset-validate:
 	$(BACKEND_RUN) python -m knowledge_system.dataset.validator
+
+eval:
+	if [[ -f "$(REPORTS_DIR)/evals/1.1.0/summary.json" ]]; then \
+		$(BACKEND_RUN) python -m knowledge_system.evaluation --output-dir "$(REPORTS_DIR)/evals/1.1.0" --previous-report "$(REPORTS_DIR)/evals/1.1.0/summary.json"; \
+	else \
+		$(BACKEND_RUN) python -m knowledge_system.evaluation --output-dir "$(REPORTS_DIR)/evals/1.1.0"; \
+	fi
 
 typecheck:
 	$(BACKEND_RUN) mypy
@@ -113,7 +120,7 @@ platform-config:
 	./scripts/bootstrap-platform.sh
 	./scripts/compose-local.sh config --quiet
 
-verify: fmt lint lint-docs prompt-integrity dataset-validate typecheck test test-security architecture-test
+verify: fmt lint lint-docs prompt-integrity dataset-validate eval typecheck test test-security architecture-test
 	@printf '%s\n' 'Local fast verification passed.'
 
 verify-release: verify shellcheck scan sbom container-lint container-scan

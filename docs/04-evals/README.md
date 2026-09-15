@@ -17,3 +17,7 @@ keeps retrieval metrics separate from future generation evaluation.
 `EVIDENCE_RESOLUTION_EVALUATION.md` documents P13 deterministic authority,
 freshness, conflict, lineage, and authorization-boundary assertions separately
 from retrieval and generation quality.
+
+`EVALUATION_HARNESS.md` documents the P18 versioned golden-case contract,
+independent retrieval/generation evaluators, deterministic metrics, security
+release gates, local report artifacts, and regression diff behavior.

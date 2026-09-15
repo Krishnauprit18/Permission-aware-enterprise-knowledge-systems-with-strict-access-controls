@@ -10,6 +10,11 @@ from hashlib import sha256
 from pathlib import Path
 from typing import cast
 
+from knowledge_system.evaluation.contracts import (
+    EvaluationContractError,
+    load_golden_cases,
+)
+
 JsonObject = dict[str, object]
 
 _SECRET_PATTERNS = (
@@ -71,6 +76,8 @@ def validate_dataset(dataset_root: Path) -> tuple[str, ...]:
     item_rows = _object_list(manifest, "source_items", errors, "manifest")
     resource_rows = _object_list(acl, "resources", errors, "acl-fixtures")
     case_rows = _object_list(golden, "cases", errors, "golden-cases")
+    if golden.get("case_schema_version") != "p18-v1":
+        errors.append("golden-cases.case_schema_version must be p18-v1")
 
     account_by_id = _index_unique(account_rows, "id", errors, "account")
     user_by_id = _index_unique(user_rows, "id", errors, "user")
@@ -108,6 +115,14 @@ def validate_dataset(dataset_root: Path) -> tuple[str, ...]:
 
     _validate_conflict_groups(conflict_groups, errors)
     _validate_cases(case_rows, user_by_id, item_by_id, tenant_ids, labels, errors)
+    try:
+        promoted_cases = load_golden_cases(
+            dataset_root / "golden-cases.json", dataset_root / "manifest.json"
+        )
+        if len(promoted_cases) < 50:
+            errors.append("P18 promoted golden contract requires at least 50 cases")
+    except EvaluationContractError as exc:
+        errors.append(f"P18 golden contract is invalid: {exc}")
 
     required_labels = set(
         _string_list(manifest, "required_scenario_labels", errors, "manifest")

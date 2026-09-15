@@ -25,7 +25,10 @@
     "internal_not_customer_shareable",
     "legal_only",
     "deleted_item",
-    "refusal_non_disclosure"
+    "refusal_non_disclosure",
+    "no_evidence",
+    "malformed_ambiguous",
+    "citation_integrity"
   ],
   "source_items": [
     {
