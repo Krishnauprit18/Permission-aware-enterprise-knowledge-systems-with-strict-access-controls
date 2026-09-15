@@ -239,3 +239,24 @@
   was not restarted in this phase; existing PostgreSQL migration checksum drift
   remains tracked as R-040. No product authorization or generation behavior was
   changed by P17.
+
+## P18
+
+- Focused evaluator evidence: `uv run --directory backend ruff check
+  src/knowledge_system/evaluation tests/unit/test_evaluation.py`, strict mypy,
+  and six focused dataset/evaluation tests passed. The full backend unit and
+  security selection passed with 154 unit tests at 90.18% measured domain
+  coverage and 109 security tests with 8 expected platform skips.
+- Fast gate: `UV_CACHE_DIR=/tmp/p18-verify-cache make verify` passed. Ruff,
+  ESLint, Prettier, Markdown lint (104 authored files), prompt integrity (21
+  archived prompts), dataset validation, strict mypy, TypeScript, 154 backend
+  unit tests, 15 frontend tests, 9 integration tests with 11 expected skips,
+  109 security tests with 8 expected skips, and architecture checks passed.
+- Evaluation baseline: `make eval` passed for 60 cases. Retrieval reported
+  Recall@1/3/5/10 `0.7575757576/0.9772727273/1.0/1.0`, Precision@1/3/5/10
+  `1.0/0.5151515152/0.3272727273/0.1636363636`, MRR `0.7333333333`, and nDCG
+  `1.0`. Generation metrics were all `1.0`; security metrics were UCR `0.0`,
+  Cross-Tenant Leakage `0`, and Invalid Citation Acceptance `0`.
+- The default report is explicitly `contract_fixture_smoke`, not a semantic
+  quality claim. No live OpenSearch/OpenFGA/model pipeline records were
+  supplied in this phase.
