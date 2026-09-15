@@ -7,7 +7,7 @@
 - Phase status: `PASS`
 - Repository baseline: empty Git repository on `master` with no prior commits at P00 inspection
 - Product implementation: P05 provides local identity/authentication, P06 provides the first-class OpenFGA authorization boundary, P07 provides canonical PostgreSQL metadata persistence, P08 provides deterministic synthetic demo/evaluation fixtures plus validation, P09 provides typed fixture connectors plus raw-ingestion orchestration, P10 provides source-aware parsing/chunking, P11 provides local embedding and disposable OpenSearch indexing, P12 provides permission-first hybrid retrieval, P13/P13R provide bounded local semantic reranking plus deterministic evidence resolution with canonical PostgreSQL/MinIO text reconstruction, P14 provides structured local grounded-generation/citation validation, and P15 provides deterministic internal/customer-safe policy selection; external sharing transport remains unimplemented.
-- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`, P13 implementation `9fca6df`, P13 docs checkpoint `c7f5a4a`, P13R implementation `03284ae`, P14 implementation `ee83c48`, P15 implementation `dc4f634`, P15 docs checkpoint `fa72aa3`, P16 implementation `765945e`, P16 orchestration fix `64900a0`.
+- Checkpoint commits: P00 `fd13c0f`, P01 `5570e59`, P02 `f512236`, P03 `cc91683`, P04 `35801fc`, P05 `03be6c1`, P06 `acb3083`, P07 `801a788`, P08 implementation `3a1b01f`, P09 implementation `7fabcf0`, P10 implementation `e112207`, P11 implementation `ebb66b9`, P11 remediation `09df9a4`, P12 implementation `a927cb9`, P12 verification `fb10e3d`, P12 docs checkpoint `51d68bf`, P13 implementation `9fca6df`, P13 docs checkpoint `c7f5a4a`, P13R implementation `03284ae`, P14 implementation `ee83c48`, P15 implementation `dc4f634`, P15 docs checkpoint `fa72aa3`, P16 implementation `765945e`, P16 orchestration fix `64900a0`, P16 docs checkpoint `9345dfa`.
 
 ## Established invariants
 
@@ -269,8 +269,8 @@ record confidentiality policy checkpoint`) are pushed to `origin/master`.
   remains a future integration task.
 
 P16 implementation checkpoint `765945e` (`feat(P16): add product API and
-evidence workspace`) and orchestration fix `64900a0` (`fix(P16): wire protected
-query orchestration`) are pushed to `origin/master`. The documentation
-checkpoint follows after this state/archive update.
+evidence workspace`), orchestration fix `64900a0` (`fix(P16): wire protected
+query orchestration`), and documentation checkpoint `9345dfa` (`docs(P16):
+record product API and UI checkpoint`) are pushed to `origin/master`.
 
 Next authorized phase: P17 only after an explicit P17 prompt.
