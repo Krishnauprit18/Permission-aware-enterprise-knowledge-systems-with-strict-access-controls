@@ -216,3 +216,26 @@
   frontend SBOMs were generated, pinned ShellCheck and Trivy fallbacks passed,
   and Docker BuildKit checks passed. The Playwright Chromium binary is a local
   operator artifact and is not committed to the repository.
+
+## P17
+
+- Focused P17 evidence: `UV_CACHE_DIR=/tmp/p17-uv-cache uv run --directory
+  backend pytest -m 'unit or security' --no-cov -q` passed 155 tests with 8
+  expected skips and 5 deselected. Coverage includes content-free query audit
+  records, pseudonymous subjects, safe authz denial events, login/logout
+  events, ingestion lifecycle events, connector and query spans, telemetry
+  outage behavior, and domain bound validation.
+- Fast gate: `UV_CACHE_DIR=/tmp/p17-verify-cache make verify` passed. Backend
+  unit tests passed 148 selected tests at 90.18% measured domain coverage;
+  frontend Vitest passed 15 tests; integration passed 9 tests with 11 expected
+  platform/live skips; security passed 106 tests with 8 expected skips.
+  Ruff, strict mypy, TypeScript, Markdown lint, prompt integrity, dataset
+  validation, Bandit, offline Semgrep, and architecture checks passed.
+- Release gate: `UV_CACHE_DIR=/tmp/p17-release-cache make verify-release` passed
+  with elevated local Docker access. Runtime dependency and npm audits found no
+  known vulnerabilities; detect-secrets, SBOM generation, pinned ShellCheck,
+  Docker BuildKit checks, and pinned Trivy configuration scans passed.
+- No live Jaeger/Prometheus trace query was claimed because the local platform
+  was not restarted in this phase; existing PostgreSQL migration checksum drift
+  remains tracked as R-040. No product authorization or generation behavior was
+  changed by P17.
