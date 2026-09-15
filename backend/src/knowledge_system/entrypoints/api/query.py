@@ -11,6 +11,11 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from knowledge_system.application.ports.authentication import ValidatedIdentity
+from knowledge_system.application.ports.observability import (
+    BestEffortTelemetry,
+    NoopTelemetry,
+    TelemetryPort,
+)
 from knowledge_system.application.ports.query import QueryAnswerService
 from knowledge_system.domain.generation import GroundedAnswer
 from knowledge_system.domain.policy import AnswerMode
@@ -106,17 +111,37 @@ async def query_knowledge(
     """Run a server-owned answer pipeline for the authenticated principal."""
 
     correlation_id = get_correlation_id(request)
-    service = getattr(request.app.state, "query_service", None)
-    if service is None:
-        return cast(QueryResponse, service_error_response(correlation_id))
-    query_service = cast(QueryAnswerService, service)
     principal = replace(identity.principal, correlation_id=correlation_id)
-    try:
-        answer = query_service.answer(principal, payload.question, payload.mode)
-    except (OSError, RuntimeError, ValueError) as exc:
-        del exc
-        return cast(QueryResponse, service_error_response(correlation_id))
-    return _project_answer(answer, correlation_id)
+    telemetry = BestEffortTelemetry(
+        cast(
+            TelemetryPort,
+            getattr(request.app.state, "telemetry", NoopTelemetry()),
+        )
+    )
+    with telemetry.span(
+        "http.knowledge.query",
+        {
+            "tenant.id": principal.tenant_id,
+            "request.correlation_id": correlation_id,
+            "answer.mode": payload.mode.value,
+        },
+    ):
+        service = getattr(request.app.state, "query_service", None)
+        if service is None:
+            telemetry.counter("knowledge.query.unavailable")
+            return cast(QueryResponse, service_error_response(correlation_id))
+        query_service = cast(QueryAnswerService, service)
+        try:
+            answer = query_service.answer(principal, payload.question, payload.mode)
+        except (OSError, RuntimeError, ValueError) as exc:
+            del exc
+            telemetry.counter("knowledge.query.failures")
+            return cast(QueryResponse, service_error_response(correlation_id))
+        telemetry.counter(
+            "knowledge.query.completed",
+            attributes={"outcome": answer.outcome.value},
+        )
+        return _project_answer(answer, correlation_id)
 
 
 def _project_answer(answer: GroundedAnswer, request_id: str) -> QueryResponse:

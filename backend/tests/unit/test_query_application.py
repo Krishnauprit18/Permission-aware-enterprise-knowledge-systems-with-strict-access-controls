@@ -1,5 +1,7 @@
 """Protected stage-order regression tests for the P16 application port."""
 
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import pytest
@@ -8,6 +10,7 @@ from knowledge_system.application.query import KnowledgeQueryApplication
 from knowledge_system.domain.contracts import PrincipalContext, PrincipalId
 from knowledge_system.domain.evidence import EvidenceResolution
 from knowledge_system.domain.generation import GroundedAnswer
+from knowledge_system.domain.observability import QueryAuditRecord
 from knowledge_system.domain.policy import AnswerMode
 from knowledge_system.domain.retrieval import (
     RetrievalRequest,
@@ -56,6 +59,54 @@ class FakeGeneration:
         del principal, resolution
         self.events.append(f"generation:{question}:{mode.value}")
         return self.answer_value
+
+
+@dataclass(slots=True)
+class CapturingAudit:
+    records: list[QueryAuditRecord]
+
+    def record_query(self, record: QueryAuditRecord) -> None:
+        self.records.append(record)
+
+
+@dataclass(slots=True)
+class FailingAudit:
+    def record_query(self, record: QueryAuditRecord) -> None:
+        del record
+        raise OSError("audit store unavailable")
+
+
+class FakeSpan:
+    def set_attribute(self, key: str, value: str | float | bool) -> None:
+        del key, value
+
+    def record_exception(self, error: BaseException) -> None:
+        del error
+
+
+@dataclass(slots=True)
+class CapturingTelemetry:
+    spans: list[str]
+    counters: list[str]
+
+    @contextmanager
+    def span(
+        self,
+        name: str,
+        attributes: Mapping[str, str | int | float | bool] | None = None,
+    ) -> Iterator[FakeSpan]:
+        del attributes
+        self.spans.append(name)
+        yield FakeSpan()
+
+    def counter(
+        self,
+        name: str,
+        value: int = 1,
+        attributes: Mapping[str, str | int | float | bool] | None = None,
+    ) -> None:
+        del value, attributes
+        self.counters.append(name)
 
 
 def _principal() -> PrincipalContext:
@@ -133,3 +184,55 @@ def test_application_preserves_authorization_before_evidence_and_generation() ->
         "evidence:What is approved?",
         "generation:What is approved?:CUSTOMER_SAFE",
     ]
+
+
+@pytest.mark.unit
+@pytest.mark.security
+def test_application_records_content_free_audit_and_nested_stage_spans() -> None:
+    events: list[str] = []
+    audit = CapturingAudit([])
+    telemetry = CapturingTelemetry([], [])
+    app = KnowledgeQueryApplication(
+        FakeRetrieval(events),
+        FakeEvidence(events),
+        FakeGeneration(events, _answer()),
+        telemetry=telemetry,
+        audit_sink=audit,
+    )
+
+    app.answer(_principal(), "What is approved?", AnswerMode.INTERNAL)
+
+    record = audit.records[0]
+    assert record.query_hash != "What is approved?"
+    assert record.pseudonymous_subject_id != "user:test"
+    assert record.evidence_ids == ()
+    assert telemetry.spans == [
+        "knowledge.query",
+        "knowledge.query.retrieval",
+        "knowledge.query.evidence",
+        "knowledge.query.generation",
+    ]
+
+
+@pytest.mark.unit
+@pytest.mark.security
+def test_audit_outage_does_not_change_answer_or_authorization_order() -> None:
+    events: list[str] = []
+    telemetry = CapturingTelemetry([], [])
+    app = KnowledgeQueryApplication(
+        FakeRetrieval(events),
+        FakeEvidence(events),
+        FakeGeneration(events, _answer()),
+        telemetry=telemetry,
+        audit_sink=FailingAudit(),
+    )
+
+    result = app.answer(_principal(), "What is approved?", AnswerMode.INTERNAL)
+
+    assert result.outcome.value == "REFUSED"
+    assert events == [
+        "retrieve:What is approved?",
+        "evidence:What is approved?",
+        "generation:What is approved?:INTERNAL",
+    ]
+    assert telemetry.counters == ["knowledge.audit.write_failures"]

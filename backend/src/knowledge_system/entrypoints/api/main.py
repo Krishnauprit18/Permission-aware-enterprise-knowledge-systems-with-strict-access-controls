@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
+from knowledge_system.adapters.observability.otel import create_local_telemetry
 from knowledge_system.entrypoints.api.auth import router as auth_router
 from knowledge_system.entrypoints.api.query import router as query_router
 
@@ -21,6 +22,7 @@ class HealthResponse(BaseModel):
 
 
 app = FastAPI(title="Permission-Aware Knowledge System", version="0.1.0")
+app.state.telemetry = create_local_telemetry()
 app.include_router(auth_router)
 app.include_router(query_router)
 

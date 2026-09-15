@@ -3,9 +3,9 @@
 ## Scope
 
 P04 supplies local infrastructure, P06 adds the OpenFGA authorization model and
-bootstrap operation, and P07 adds only canonical PostgreSQL metadata tables and
-explicit migrations. No connectors, indexes, models, or source demo content are
-created yet.
+bootstrap operation, P07 adds canonical PostgreSQL metadata tables and explicit
+migrations, and P17 adds the local trace/audit path. Product source data and
+model serving remain separately controlled by their phase-specific boundaries.
 The Compose project is `permission-aware-knowledge` and all services use the
 private `platform` network.
 

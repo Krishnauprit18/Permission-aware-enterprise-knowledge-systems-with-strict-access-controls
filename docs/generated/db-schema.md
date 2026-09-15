@@ -93,6 +93,7 @@ Generated from the live `knowledge` database by `scripts/generate-db-schema-doc.
 | query_traces | outcome | text | NO |  |
 | query_traces | evidence_ids | jsonb | NO | '[]'::jsonb |
 | query_traces | latency_ms | integer | YES |  |
+| query_traces | audit_metadata | jsonb | NO | '{}'::jsonb |
 | query_traces | created_at | timestamp with time zone | NO | CURRENT_TIMESTAMP |
 | query_traces | retention_until | timestamp with time zone | NO |  |
 | schema_migrations | migration_version | text | NO |  |
@@ -133,6 +134,18 @@ Generated from the live `knowledge` database by `scripts/generate-db-schema-doc.
 | source_items | lineage | jsonb | NO | '{}'::jsonb |
 | source_items | created_at | timestamp with time zone | NO | CURRENT_TIMESTAMP |
 | source_items | updated_at | timestamp with time zone | NO | CURRENT_TIMESTAMP |
+| security_audit_events | event_id | text | NO |  |
+| security_audit_events | event_type | text | NO |  |
+| security_audit_events | correlation_id | text | NO |  |
+| security_audit_events | trace_id | text | YES |  |
+| security_audit_events | principal_subject_pseudonym | text | YES |  |
+| security_audit_events | tenant_id | text | YES |  |
+| security_audit_events | outcome | text | NO |  |
+| security_audit_events | reason_code | text | NO |  |
+| security_audit_events | target_ref_hash | character | YES |  |
+| security_audit_events | attributes | jsonb | NO | '{}'::jsonb |
+| security_audit_events | schema_version | text | NO |  |
+| security_audit_events | created_at | timestamp with time zone | NO | CURRENT_TIMESTAMP |
 | tenants | tenant_id | text | NO |  |
 | tenants | name | text | NO |  |
 | tenants | status | text | NO | 'ACTIVE'::text |

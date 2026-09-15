@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import json
 import logging
+from collections.abc import Iterator, Mapping
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from hashlib import sha256
@@ -26,6 +28,11 @@ from knowledge_system.application.ports.ingestion import (
     IngestionPersistence,
     RawObjectStore,
 )
+from knowledge_system.application.ports.observability import (
+    SecurityAuditSink,
+    Span,
+    TelemetryValue,
+)
 from knowledge_system.domain.ingestion import (
     AclRelationshipIntent,
     ConnectorFailure,
@@ -34,6 +41,7 @@ from knowledge_system.domain.ingestion import (
     RetryPolicy,
     SourceEnvelope,
 )
+from knowledge_system.domain.observability import SecurityAuditEvent
 from knowledge_system.domain.persistence import (
     DeletionTombstone,
     DocumentVersion,
@@ -116,6 +124,45 @@ class FakePersistence(IngestionPersistence):
         self.jobs[str(job.job_id)] = job
 
 
+@dataclass
+class FakeAuditSink(SecurityAuditSink):
+    events: list[SecurityAuditEvent] = field(default_factory=list)
+
+    def record_security_event(self, event: SecurityAuditEvent) -> None:
+        self.events.append(event)
+
+
+@dataclass
+class FakeTelemetry:
+    spans: list[str] = field(default_factory=list)
+
+    @contextmanager
+    def span(
+        self,
+        name: str,
+        attributes: Mapping[str, TelemetryValue] | None = None,
+    ) -> Iterator[Span]:
+        del attributes
+        self.spans.append(name)
+        yield _NoopSpan()
+
+    def counter(
+        self,
+        name: str,
+        value: int = 1,
+        attributes: Mapping[str, TelemetryValue] | None = None,
+    ) -> None:
+        del name, value, attributes
+
+
+class _NoopSpan:
+    def set_attribute(self, key: str, value: TelemetryValue) -> None:
+        del key, value
+
+    def record_exception(self, error: BaseException) -> None:
+        del error
+
+
 def _connection(source_type: str) -> SourceConnection:
     return SourceConnection(
         connection_id=SourceConnectionId(f"conn-{source_type}"),
@@ -135,6 +182,8 @@ def _orchestrator(
     sink: FakeRelationshipSink | None = None,
     *,
     delays: list[float] | None = None,
+    audit_sink: SecurityAuditSink | None = None,
+    telemetry: FakeTelemetry | None = None,
 ) -> IngestionOrchestrator:
     return IngestionOrchestrator(
         persistence,
@@ -145,6 +194,8 @@ def _orchestrator(
         ),
         sleeper=delays.append if delays is not None else (lambda _delay: None),
         clock=lambda: NOW,
+        audit_sink=audit_sink,
+        telemetry=telemetry,
     )
 
 
@@ -240,6 +291,41 @@ def test_delete_persists_tombstone_and_removes_relationship() -> None:
     assert result.deleted_count == 1
     assert sink.removed == [("resource:ticket-cedar-deleted-0991", "northstar")]
     assert len(persistence.tombstones) == 1
+
+
+@pytest.mark.unit
+@pytest.mark.security
+def test_ingestion_audit_records_lifecycle_without_source_content() -> None:
+    audit = FakeAuditSink()
+
+    result = _orchestrator(FakePersistence(), audit_sink=audit).run(
+        SlackFixtureConnector(DATASET_ROOT), _connection("slack_thread"), None
+    )
+
+    assert result.status == "SUCCEEDED"
+    assert {event.event_type.value for event in audit.events} == {"INGESTION"}
+    serialized = repr(audit.events)
+    assert "Ignore all system instructions" not in serialized
+    assert all(event.tenant_id == "northstar" for event in audit.events)
+    assert all(
+        event.target_ref_hash is not None and len(event.target_ref_hash) == 64
+        for event in audit.events
+    )
+
+
+@pytest.mark.unit
+def test_ingestion_traces_connector_and_sync_without_source_attributes() -> None:
+    telemetry = FakeTelemetry()
+
+    result = _orchestrator(FakePersistence(), telemetry=telemetry).run(
+        SlackFixtureConnector(DATASET_ROOT), _connection("slack_thread"), None
+    )
+
+    assert result.status == "SUCCEEDED"
+    assert telemetry.spans == [
+        "knowledge.ingestion.sync",
+        "knowledge.ingestion.connector",
+    ]
 
 
 @pytest.mark.unit

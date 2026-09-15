@@ -31,7 +31,8 @@ content is used.
 | `ingestion_jobs` | Durable job status and idempotency key | Error fields are codes, not credentials or payload dumps |
 | `ingestion_checkpoints` | Connector cursor and committed source hash | Cursor is treated as source metadata and retained minimally |
 | `deletion_tombstones` | Durable deletion/de-permission marker | Prevents stale replay and is retained through the deletion window |
-| `query_traces` | Minimized audit metadata and evidence IDs | Query text and model context are not stored by default |
+| `query_traces` | Minimized query audit metadata and evidence IDs | Query text, raw model context, tokens, and vectors are not stored by default |
+| `security_audit_events` | Typed login, authorization, lifecycle, policy, admin, and query audit events | Payload is minimized JSON metadata; subject references are pseudonymous |
 | `evaluation_datasets` | Versioned evaluation set registry | Controlled test metadata only |
 | `evaluation_cases` | Questions, expected evidence IDs, and refusal labels | Synthetic/local evaluation boundary |
 | `evaluation_runs` | Retrieval/generation metrics and model-version references | Metrics only; no raw prompts or answers by default |

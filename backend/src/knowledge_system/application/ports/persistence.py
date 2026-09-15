@@ -3,6 +3,7 @@
 from collections.abc import Callable
 from typing import Literal, Protocol
 
+from knowledge_system.domain.observability import SecurityAuditEvent
 from knowledge_system.domain.persistence import (
     Account,
     ChunkMetadata,
@@ -55,6 +56,8 @@ class CanonicalRepository(Protocol):
     def save_deletion_tombstone(self, tombstone: DeletionTombstone) -> None: ...
 
     def save_query_trace(self, trace: QueryTraceMetadata) -> None: ...
+
+    def save_security_audit_event(self, event: SecurityAuditEvent) -> None: ...
 
     def save_evaluation_dataset(self, dataset: EvaluationDataset) -> None: ...
 

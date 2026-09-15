@@ -122,6 +122,9 @@ class PermissionFirstRetrievalService:
             # is an explicit regression metric for the future reranker boundary.
             unauthorized_context_count=0,
             component_diagnostics=diagnostics,
+            authorization_model_id=authorization_filter.authorization_model_id,
+            tuple_version=authorization_filter.tuple_version,
+            policy_version=authorization_filter.policy_version,
         )
         return RetrievalResult(tuple(authorized), trace)
 
@@ -141,5 +144,8 @@ class PermissionFirstRetrievalService:
                 denied_candidate_count=0,
                 returned_candidate_count=0,
                 unauthorized_context_count=0,
+                authorization_model_id=authorization_filter.authorization_model_id,
+                tuple_version=authorization_filter.tuple_version,
+                policy_version=authorization_filter.policy_version,
             ),
         )

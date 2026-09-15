@@ -20,6 +20,12 @@ from knowledge_system.application.ports.persistence import (
     CanonicalRepository,
     PersistenceError,
 )
+from knowledge_system.domain.observability import (
+    AuditEventId,
+    AuditEventType,
+    AuditOutcome,
+    SecurityAuditEvent,
+)
 from knowledge_system.domain.persistence import (
     Account,
     AccountId,
@@ -55,7 +61,7 @@ from knowledge_system.domain.persistence import (
 )
 
 ROOT = Path(__file__).parents[3]
-MIGRATION = ROOT / "backend" / "migrations" / "0001_initial.sql"
+MIGRATIONS = tuple(sorted((ROOT / "backend" / "migrations").glob("*.sql")))
 DatabaseFactory = Callable[[], Connection[dict[str, object]]]
 IsolatedDatabase = tuple[DatabaseFactory, str]
 
@@ -119,7 +125,9 @@ def isolated_database() -> Generator[IsolatedDatabase, None, None]:
         with connection.transaction():
             connection.execute(SQL("CREATE SCHEMA {} ").format(Identifier(schema)))
             connection.execute(SQL("SET search_path TO {} ").format(Identifier(schema)))
-            connection.execute(MIGRATION.read_text(encoding="utf-8"))
+            connection.execute(
+                "\n\n".join(path.read_text(encoding="utf-8") for path in MIGRATIONS)
+            )
         yield connection_factory(url, schema), schema
     finally:
         connection.execute("SET search_path TO public")
@@ -322,10 +330,50 @@ def test_empty_database_migration_creates_required_tables(
         "ingestion_checkpoints",
         "deletion_tombstones",
         "query_traces",
+        "security_audit_events",
         "evaluation_datasets",
         "evaluation_cases",
         "evaluation_runs",
     }.issubset({_required_table_name(row) for row in tables})
+
+
+@pytest.mark.integration
+@pytest.mark.security
+def test_security_audit_event_persists_without_content(
+    isolated_database: IsolatedDatabase,
+) -> None:
+    factory, _schema = isolated_database
+    objects = seed_objects()
+    with PostgresUnitOfWork(factory) as repository:
+        repository.save_tenant(objects.tenant)
+        repository.save_principal_reference(objects.principal)
+        event = SecurityAuditEvent(
+            event_id=AuditEventId("audit-p17-event"),
+            event_type=AuditEventType.AUTHZ_DENIAL,
+            correlation_id="corr-p17",
+            trace_id="trace-p17",
+            pseudonymous_subject_id="subject-hash",
+            tenant_id=str(objects.tenant.tenant_id),
+            outcome=AuditOutcome.DENIED,
+            reason_code="relation_denied",
+            target_ref_hash="a" * 64,
+            attributes={"action": "can_view", "evidence_ids": ["evidence-1"]},
+            created_at=datetime(2026, 9, 15, tzinfo=UTC),
+        )
+        repository.save_security_audit_event(event)
+    with factory() as connection:
+        row = connection.execute(
+            "SELECT event_type, outcome, attributes FROM security_audit_events "
+            "WHERE event_id = %s",
+            (str(event.event_id),),
+        ).fetchone()
+    assert row is not None
+    assert row["event_type"] == "AUTHZ_DENIAL"
+    assert row["outcome"] == "DENIED"
+    assert row["attributes"] == {
+        "action": "can_view",
+        "evidence_ids": ["evidence-1"],
+    }
 
 
 @pytest.mark.integration

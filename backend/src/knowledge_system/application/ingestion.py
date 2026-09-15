@@ -4,18 +4,26 @@ from __future__ import annotations
 
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
 from time import sleep
 
+from knowledge_system.application.audit import lifecycle_event
 from knowledge_system.application.ports.ingestion import (
     AuthorizationRelationshipSink,
     Connector,
+    ConnectorResult,
     IngestionPersistence,
     RawObjectStore,
     Sleeper,
+)
+from knowledge_system.application.ports.observability import (
+    BestEffortTelemetry,
+    NoopTelemetry,
+    SecurityAuditSink,
+    TelemetryPort,
 )
 from knowledge_system.application.ports.persistence import PersistenceError
 from knowledge_system.domain.ingestion import (
@@ -26,6 +34,11 @@ from knowledge_system.domain.ingestion import (
     RawSnapshot,
     RetryPolicy,
     SourceEnvelope,
+)
+from knowledge_system.domain.observability import (
+    AuditEventType,
+    AuditOutcome,
+    SecurityAuditEvent,
 )
 from knowledge_system.domain.persistence import (
     DeletionTombstone,
@@ -84,6 +97,8 @@ class IngestionOrchestrator:
         sleeper: Sleeper | None = None,
         clock: Clock | None = None,
         logger: logging.Logger | None = None,
+        telemetry: TelemetryPort | None = None,
+        audit_sink: SecurityAuditSink | None = None,
     ) -> None:
         self._persistence = persistence
         self._raw_store = raw_store
@@ -92,8 +107,93 @@ class IngestionOrchestrator:
         self._sleeper = sleeper or sleep
         self._clock = clock or (lambda: datetime.now(UTC))
         self._logger = logger or logging.getLogger(__name__)
+        self._telemetry = BestEffortTelemetry(telemetry or NoopTelemetry())
+        self._audit_sink = audit_sink
 
     def run(
+        self,
+        connector: Connector,
+        connection: SourceConnection,
+        checkpoint: str | None,
+    ) -> IngestionResult:
+        """Run a sync inside a content-free, correlation-safe telemetry span."""
+
+        with self._telemetry.span(
+            "knowledge.ingestion.sync",
+            {
+                "tenant.id": str(connection.tenant_id),
+                "source.type": connection.source_type,
+                "source.connection_id": str(connection.connection_id),
+            },
+        ) as span:
+            try:
+                result = self._run(connector, connection, checkpoint)
+            except BaseException as error:
+                span.record_exception(error)
+                self._telemetry.counter("knowledge.ingestion.failures")
+                self._emit_audit(
+                    lifecycle_event(
+                        AuditEventType.INGESTION,
+                        correlation_id=f"ingestion:{connection.connection_id}",
+                        outcome=AuditOutcome.FAILED,
+                        reason_code="sync_failed",
+                        tenant_id=str(connection.tenant_id),
+                        target_ref=str(connection.connection_id),
+                    )
+                )
+                raise
+            self._telemetry.counter(
+                "knowledge.ingestion.completed",
+                attributes={"status": result.status},
+            )
+            self._emit_audit(
+                lifecycle_event(
+                    AuditEventType.INGESTION,
+                    correlation_id=result.trace_id,
+                    outcome=(
+                        AuditOutcome.SUCCEEDED
+                        if result.status == "SUCCEEDED"
+                        else AuditOutcome.FAILED
+                    ),
+                    reason_code=(
+                        "sync_completed"
+                        if result.status == "SUCCEEDED"
+                        else "item_failures"
+                    ),
+                    tenant_id=str(connection.tenant_id),
+                    target_ref=str(connection.connection_id),
+                    attributes={
+                        "job_id": result.job_id,
+                        "processed_count": result.processed_count,
+                        "unchanged_count": result.unchanged_count,
+                        "failed_count": result.failed_count,
+                        "deleted_count": result.deleted_count,
+                    },
+                )
+            )
+            if result.deleted_count:
+                self._emit_audit(
+                    lifecycle_event(
+                        AuditEventType.DELETION,
+                        correlation_id=result.trace_id,
+                        outcome=AuditOutcome.SUCCEEDED,
+                        reason_code="source_deletions_recorded",
+                        tenant_id=str(connection.tenant_id),
+                        target_ref=str(connection.connection_id),
+                        attributes={"deleted_count": result.deleted_count},
+                    )
+                )
+            return result
+
+    def _emit_audit(self, event: SecurityAuditEvent) -> None:
+        if self._audit_sink is None:
+            return
+        try:
+            self._audit_sink.record_security_event(event)
+        except (OSError, RuntimeError, ValueError):
+            self._telemetry.counter("knowledge.audit.write_failures")
+
+    def _run(
         self,
         connector: Connector,
         connection: SourceConnection,
@@ -123,7 +223,9 @@ class IngestionOrchestrator:
         last_cursor: str | None = None
         gap = False
         try:
-            for result in connector.iter_changes(checkpoint):
+            for result in self._iter_connector_changes(
+                connector, checkpoint, connection
+            ):
                 cursor = result.external_cursor
                 if isinstance(result, ConnectorFailure):
                     failed += 1
@@ -189,6 +291,23 @@ class IngestionOrchestrator:
             )
             self._persistence.finalize_run(final_job)
             raise
+
+    def _iter_connector_changes(
+        self,
+        connector: Connector,
+        checkpoint: str | None,
+        connection: SourceConnection,
+    ) -> Iterator[ConnectorResult]:
+        """Trace connector I/O without attaching source content or item IDs."""
+
+        with self._telemetry.span(
+            "knowledge.ingestion.connector",
+            {
+                "tenant.id": str(connection.tenant_id),
+                "source.type": connector.source_type,
+            },
+        ):
+            yield from connector.iter_changes(checkpoint)
 
     def _process_item(
         self,

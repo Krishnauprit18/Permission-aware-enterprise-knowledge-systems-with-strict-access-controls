@@ -9,3 +9,4 @@ Material decisions are recorded as numbered ADRs. Historical chat is not an auth
 - P06 accepted decision: OpenFGA schema 1.1 relationship model with application-side tenant/classification enforcement, explicit restricted access, separate external sharing, and versioned decision fingerprints in `ADR-012-openfga-authorization-model-v1.md`.
 - P07 accepted decision: normalized PostgreSQL canonical metadata with explicit checksum-verified migrations, typed transactions, stable identities, and durable tombstones in `ADR-013-canonical-postgresql-data-model.md`.
 - P15 accepted decision: deterministic confidentiality filtering before generation with separate view/share decisions in `ADR-017-deterministic-confidentiality-policy.md`.
+- P17 accepted decision: content-free durable security audit events plus best-effort local OpenTelemetry operational telemetry in `ADR-019-observability-and-audit.md`.

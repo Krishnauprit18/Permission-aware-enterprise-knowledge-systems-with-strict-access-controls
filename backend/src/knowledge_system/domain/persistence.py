@@ -387,6 +387,7 @@ class QueryTraceMetadata:
     retention_until: datetime
     evidence_ids: tuple[str, ...] = ()
     latency_ms: int | None = None
+    audit_metadata: Mapping[str, object] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         object.__setattr__(

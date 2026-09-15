@@ -241,6 +241,9 @@ class RetrievalTrace:
     returned_candidate_count: int
     unauthorized_context_count: int
     component_diagnostics: tuple[ComponentDiagnostic, ...] = ()
+    authorization_model_id: str = "unknown"
+    tuple_version: str = "unknown"
+    policy_version: str = "unknown"
 
     @property
     def unauthorized_context_rate(self) -> float:

@@ -14,6 +14,7 @@ from knowledge_system.application.ports.persistence import (
     PersistenceError,
     UnitOfWork,
 )
+from knowledge_system.domain.observability import SecurityAuditEvent
 from knowledge_system.domain.persistence import (
     Account,
     AccountId,
@@ -483,8 +484,8 @@ class PostgresCanonicalRepository(CanonicalRepository):
             INSERT INTO query_traces
                 (trace_id, tenant_id, principal_subject_id, correlation_id, query_hash,
                  authorization_fingerprint, schema_version, outcome, evidence_ids,
-                 latency_ms, created_at, retention_until)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                 latency_ms, audit_metadata, created_at, retention_until)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ON CONFLICT (trace_id) DO NOTHING
             """,
             (
@@ -498,8 +499,35 @@ class PostgresCanonicalRepository(CanonicalRepository):
                 trace.outcome.value,
                 Jsonb(list(trace.evidence_ids)),
                 trace.latency_ms,
+                Jsonb(dict(trace.audit_metadata)),
                 trace.created_at,
                 trace.retention_until,
+            ),
+        )
+
+    def save_security_audit_event(self, event: SecurityAuditEvent) -> None:
+        self._execute(
+            """
+            INSERT INTO security_audit_events
+                (event_id, event_type, correlation_id, trace_id,
+                 principal_subject_pseudonym, tenant_id, outcome, reason_code,
+                 target_ref_hash, attributes, schema_version, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (event_id) DO NOTHING
+            """,
+            (
+                str(event.event_id),
+                event.event_type.value,
+                event.correlation_id,
+                event.trace_id,
+                event.pseudonymous_subject_id,
+                event.tenant_id,
+                event.outcome.value,
+                event.reason_code,
+                event.target_ref_hash,
+                Jsonb(dict(event.attributes)),
+                event.schema_version,
+                event.created_at,
             ),
         )
 

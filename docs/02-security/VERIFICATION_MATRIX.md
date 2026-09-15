@@ -37,6 +37,15 @@ This matrix defines planned engineering verification guidance. It does not claim
 | Local operations and supply chain | Dependency review, SBOM, artifact integrity, source/build provenance, restore and rollback evidence | T-05/T-11/T-17 |
 | Synthetic dataset integrity | Deterministic fixture validation, source-hash checks, tenant/ACL/lifecycle/lineage validation, required scenario coverage, and synthetic-content safety checks | P08; T-40/T-41 |
 
+### P17 auditability and observability verification
+
+| Property | Verification evidence |
+|---|---|
+| Content-free query audit | `QueryAuditRecord` unit tests and durable PostgreSQL event persistence cover hashes, IDs, ranks, versions, policy codes, timing, and outcomes without raw question/text/vector fields. |
+| Security-event accountability | Typed login/logout, authorization denial/decision, ingestion, deletion, role, policy, and administrative event categories use pseudonymous subjects and hashed targets where relevant. |
+| Telemetry correlation | Nested API/query/ingestion span tests assert correlation attributes; local OTLP exporter targets only the loopback collector when explicitly enabled. |
+| Redaction and outage behavior | Sensitive token/cookie/secret/text/vector/hidden-reasoning tests pass; audit and collector failures cannot widen authorization or change protected query behavior. |
+
 ## NIST SSDF 1.1 mapping
 
 The project will use SSDF 1.1 as a secure-development vocabulary. Planned evidence is mapped at practice level until the implementation stack is selected:
